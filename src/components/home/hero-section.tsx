@@ -38,7 +38,7 @@ const HERO_SLIDES = [
 
 export function HeroSection() {
     const plugin = React.useRef(
-        Autoplay({ delay: 5000, stopOnInteraction: true })
+        Autoplay({ delay: 4000, stopOnInteraction: false })
     )
 
     return (
@@ -46,8 +46,9 @@ export function HeroSection() {
             <Carousel
                 plugins={[plugin.current]}
                 className="w-full"
-                onMouseEnter={plugin.current.stop}
-                onMouseLeave={plugin.current.reset}
+                opts={{
+                    loop: true,
+                }}
             >
                 <CarouselContent>
                     {HERO_SLIDES.map((slide) => (
