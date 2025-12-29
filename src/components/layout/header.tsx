@@ -37,11 +37,14 @@ export function Header() {
                             <SheetTitle className="text-left font-serif text-2xl font-bold">Tatva</SheetTitle>
                         </SheetHeader>
                         <nav className="flex flex-col gap-4 mt-8">
-                            <Link href="#" className="text-lg font-medium hover:text-primary transition-colors">New Launch</Link>
+                            <Link href="/new-launch" className="text-lg font-medium hover:text-primary transition-colors">New Launch</Link>
                             <Separator />
-                            <Link href="#" className="text-lg font-medium hover:text-primary transition-colors">Shop By Category</Link>
-                            <Link href="#" className="text-lg font-medium hover:text-primary transition-colors">Collections</Link>
-                            <Link href="#" className="text-lg font-medium hover:text-primary transition-colors">Best Sellers</Link>
+                            <Link href="/shop/rings" className="text-lg font-medium hover:text-primary transition-colors">Rings</Link>
+                            <Link href="/shop/necklaces" className="text-lg font-medium hover:text-primary transition-colors">Necklaces</Link>
+                            <Link href="/shop/earrings" className="text-lg font-medium hover:text-primary transition-colors">Earrings</Link>
+                            <Link href="/shop/bracelets" className="text-lg font-medium hover:text-primary transition-colors">Bracelets</Link>
+                            <Separator />
+                            <Link href="/collections" className="text-lg font-medium hover:text-primary transition-colors">Collections</Link>
                         </nav>
                     </SheetContent>
                 </Sheet>
@@ -66,10 +69,18 @@ export function Header() {
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="center" className="w-48">
-                            <DropdownMenuItem>Rings</DropdownMenuItem>
-                            <DropdownMenuItem>Necklaces</DropdownMenuItem>
-                            <DropdownMenuItem>Earrings</DropdownMenuItem>
-                            <DropdownMenuItem>Bracelets</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/shop/rings" className="cursor-pointer">Rings</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/shop/necklaces" className="cursor-pointer">Necklaces</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/shop/earrings" className="cursor-pointer">Earrings</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/shop/bracelets" className="cursor-pointer">Bracelets</Link>
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 

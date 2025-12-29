@@ -64,10 +64,10 @@ export function CustomerReviews() {
                 >
                     <CarouselContent className="-ml-4">
                         {REVIEWS.map((review) => (
-                            <CarouselItem key={review.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                            <CarouselItem key={review.id} className="pl-4 basis-full md:basis-1/2 lg:basis-1/3">
                                 <div className="p-1">
                                     <Card className="border-none shadow-sm bg-secondary/20 h-full">
-                                        <CardContent className="flex flex-col items-center text-center p-8 space-y-4 h-[300px]">
+                                        <CardContent className="flex flex-col items-center text-center p-8 space-y-4 min-h-[300px]">
                                             <div className="flex gap-1">
                                                 {[...Array(review.rating)].map((_, i) => (
                                                     <Star key={i} className="h-4 w-4 fill-gold text-gold" />
