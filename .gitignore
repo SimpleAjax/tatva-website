@@ -9,12 +9,14 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+backend/.vscode
 
 # testing
 /coverage
 
 # next.js
 /.next/
+storefront/.next/
 /out/
 
 # production
@@ -39,3 +41,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+#yarn
+backend/.yarn
