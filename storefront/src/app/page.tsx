@@ -8,8 +8,9 @@ import InfoBar from "@/components/InfoBar";
 import Collections from "@/components/Collections";
 import Reviews from "@/components/Reviews";
 import Footer from "@/components/Footer";
+import { getProducts, Product } from "@/lib/medusa";
 
-// Mock Data for Sections
+// Mock Data for Reels (these would come from a CMS or API)
 const bestSellersReels = [
   {
     productName: "Golden Aura Bracelet",
@@ -53,36 +54,67 @@ const bestSellersReels = [
   },
 ];
 
-const newArrivals = [
-  { name: "Diamond Dew Drop", price: "₹3,499", originalPrice: "₹4,999", discount: "30%", isNew: true },
-  { name: "Rose Gold Bangle", price: "₹2,199", originalPrice: "₹2,799", discount: "21%", isNew: true },
-  { name: "Emerald Studs", price: "₹1,499", originalPrice: "₹1,999", discount: "25%", isNew: true },
-  { name: "Sapphire Pendant", price: "₹4,299", originalPrice: "₹5,500", discount: "22%", isNew: true },
-];
+async function getNewArrivals(): Promise<Product[]> {
+  try {
+    const { products } = await getProducts({ limit: 4 });
+    console.log(`[Home] Fetched ${products.length} new arrivals`);
+    return products;
+  } catch (error) {
+    console.error("[Home] Failed to fetch new arrivals:", error);
+    return [];
+  }
+}
 
-const weddingEdit = [
-  { name: "Bridal Kundan Set", price: "₹15,499", originalPrice: "₹24,999", discount: "38%" },
-  { name: "Temple Jewelry Choker", price: "₹8,999", originalPrice: "₹12,499", discount: "28%" },
-  { name: "Polki Maang Tikka", price: "₹2,499", originalPrice: "₹3,299", discount: "24%" },
-  { name: "Antique Gold Jhumkas", price: "₹4,199", originalPrice: "₹5,499", discount: "23%" },
-];
+async function getBestSellers(): Promise<Product[]> {
+  try {
+    const { products } = await getProducts({ limit: 4 });
+    return products;
+  } catch (error) {
+    console.error("Failed to fetch best sellers:", error);
+    return [];
+  }
+}
 
-const budgetBuys = [
-  { name: "Minimalist Ring", price: "₹499", originalPrice: "₹999", discount: "50%" },
-  { name: "Silver Nose Pin", price: "₹299", originalPrice: "₹599", discount: "50%" },
-  { name: "Boho Anklet", price: "₹699", originalPrice: "₹1,199", discount: "41%" },
-  { name: "Tiny Heart Studs", price: "₹399", originalPrice: "₹799", discount: "50%" },
-];
+async function getWeddingProducts(): Promise<Product[]> {
+  try {
+    const { products } = await getProducts({ limit: 4 });
+    return products;
+  } catch (error) {
+    console.error("Failed to fetch wedding products:", error);
+    return [];
+  }
+}
 
-const giftSets = [
-  { name: "Love Bundle", price: "₹2,499", originalPrice: "₹3,999", discount: "37%" },
-  { name: "Bestie Set", price: "₹1,999", originalPrice: "₹2,999", discount: "33%" },
-  { name: "Self-Care Box", price: "₹3,499", originalPrice: "₹4,999", discount: "30%" },
-  { name: "Office Chic", price: "₹1,599", originalPrice: "₹2,299", discount: "30%" },
-  { name: "Travel Essentials", price: "₹2,199", originalPrice: "₹3,199", discount: "31%" },
-];
+async function getBudgetProducts(): Promise<Product[]> {
+  try {
+    const { products } = await getProducts({ limit: 4 });
+    return products;
+  } catch (error) {
+    console.error("Failed to fetch budget products:", error);
+    return [];
+  }
+}
 
-export default function Home() {
+async function getGiftProducts(): Promise<Product[]> {
+  try {
+    const { products } = await getProducts({ limit: 5 });
+    return products;
+  } catch (error) {
+    console.error("Failed to fetch gift products:", error);
+    return [];
+  }
+}
+
+export default async function Home() {
+  // Fetch products from Medusa
+  const [newArrivals, bestSellers, weddingProducts, budgetProducts, giftProducts] = await Promise.all([
+    getNewArrivals(),
+    getBestSellers(),
+    getWeddingProducts(),
+    getBudgetProducts(),
+    getGiftProducts(),
+  ]);
+
   return (
     <div className="flex min-h-screen flex-col bg-background font-sans">
       <AnnouncementBar />
@@ -103,11 +135,17 @@ export default function Home() {
             </div>
             <button className="text-xs font-bold uppercase tracking-widest border-b border-primary text-primary pb-1 hover:opacity-80">View All</button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {newArrivals.map((product, i) => (
-              <ProductCard key={i} {...product} />
-            ))}
-          </div>
+          {newArrivals.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {newArrivals.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              No products available. Please check your Medusa backend connection.
+            </div>
+          )}
         </section>
 
         {/* Best Sellers (Instagram Reels Style) Section */}
@@ -153,9 +191,15 @@ export default function Home() {
               </div>
               {/* Products Grid */}
               <div className="w-full lg:w-2/3 grid grid-cols-2 gap-6">
-                {weddingEdit.map((product, i) => (
-                  <ProductCard key={i} {...product} />
-                ))}
+                {weddingProducts.length > 0 ? (
+                  weddingProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-12 text-muted-foreground">
+                    No products available.
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -170,13 +214,19 @@ export default function Home() {
             <h2 className="text-3xl font-serif text-primary italic">Gifts for Her</h2>
             <p className="text-muted-foreground text-xs uppercase tracking-widest mt-2">Curated sets for every occasion</p>
           </div>
-          <div className="flex overflow-x-auto space-x-6 pb-8 no-scrollbar -mx-4 px-4 snap-x">
-            {giftSets.map((product, i) => (
-              <div key={i} className="min-w-[200px] md:min-w-[250px] snap-start">
-                <ProductCard {...product} />
-              </div>
-            ))}
-          </div>
+          {giftProducts.length > 0 ? (
+            <div className="flex overflow-x-auto space-x-6 pb-8 no-scrollbar -mx-4 px-4 snap-x">
+              {giftProducts.map((product) => (
+                <div key={product.id} className="min-w-[200px] md:min-w-[250px] snap-start">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              No products available.
+            </div>
+          )}
         </section>
 
         {/* Shop the Look Section */}
@@ -221,11 +271,17 @@ export default function Home() {
             <span className="bg-primary text-white px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full">Steal Deals</span>
             <h2 className="text-3xl font-serif text-primary italic">Under ₹999</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {budgetBuys.map((product, i) => (
-              <ProductCard key={i} {...product} />
-            ))}
-          </div>
+          {budgetProducts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {budgetProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              No products available.
+            </div>
+          )}
           <div className="mt-10 text-center">
             <button className="border-b-2 border-primary text-primary font-bold text-xs uppercase tracking-widest pb-1 hover:text-primary/80">View All Budget Buys</button>
           </div>

@@ -17,6 +17,7 @@ backend/.vscode
 # next.js
 /.next/
 storefront/.next/
+storefront/node_modules/
 /out/
 
 # production
