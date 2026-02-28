@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import {
   Cart,
+  Address,
   createCart,
   getCart,
   addToCart,
@@ -26,8 +27,8 @@ interface CartContextType {
   addItem: (variantId: string, quantity: number) => Promise<void>;
   updateItem: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
-  setShippingAddress: (address: Partial<Cart["shipping_address"]>) => Promise<void>;
-  setBillingAddress: (address: Partial<Cart["billing_address"]>) => Promise<void>;
+  setShippingAddress: (address: Partial<Address>) => Promise<void>;
+  setBillingAddress: (address: Partial<Address>) => Promise<void>;
   setShippingMethod: (optionId: string) => Promise<void>;
   setEmail: (email: string) => Promise<void>;
   refreshCart: () => Promise<void>;
@@ -86,13 +87,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const refreshShippingOptions = useCallback(async () => {
     if (!cart?.id) return;
+    // Only fetch shipping options if cart has a shipping address
+    if (!cart.shipping_address?.country_code) {
+      setShippingOptions([]);
+      return;
+    }
     try {
       const { shipping_options } = await getShippingOptions(cart.id);
       setShippingOptions(shipping_options);
     } catch (error) {
-      console.error("Failed to fetch shipping options:", error);
+      // Silently ignore shipping options errors (e.g., no address set yet)
+      console.log("Shipping options not available yet:", error);
+      setShippingOptions([]);
     }
-  }, [cart?.id]);
+  }, [cart?.id, cart?.shipping_address?.country_code]);
 
   const refreshCart = useCallback(async () => {
     if (!cart?.id) return;
@@ -151,11 +159,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cart?.id]);
 
-  const setShippingAddress = useCallback(async (address: Partial<Cart["shipping_address"]>) => {
+  const setShippingAddress = useCallback(async (address: Partial<Address>) => {
     if (!cart?.id) return;
     setIsLoading(true);
     try {
-      const { cart: updatedCart } = await updateCart(cart.id, { shipping_address: address });
+      const { cart: updatedCart } = await updateCart(cart.id, { shipping_address: address as Address });
       setCart(updatedCart);
     } catch (error) {
       console.error("Failed to set shipping address:", error);
@@ -165,11 +173,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cart?.id]);
 
-  const setBillingAddress = useCallback(async (address: Partial<Cart["billing_address"]>) => {
+  const setBillingAddress = useCallback(async (address: Partial<Address>) => {
     if (!cart?.id) return;
     setIsLoading(true);
     try {
-      const { cart: updatedCart } = await updateCart(cart.id, { billing_address: address });
+      const { cart: updatedCart } = await updateCart(cart.id, { billing_address: address as Address });
       setCart(updatedCart);
     } catch (error) {
       console.error("Failed to set billing address:", error);

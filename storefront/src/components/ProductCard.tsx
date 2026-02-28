@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingCart, Check, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Product, formatPrice, getVariantPrice } from "@/lib/medusa";
+import { Product, formatPrice, getVariantPrice, addToWishlist, removeFromWishlist, getWishlist } from "@/lib/medusa";
 import { useCart } from "@/context/CartContext";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +39,49 @@ const ProductCard = (props: ProductCardProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   // Handle Medusa product
   if (isMedusaProduct(props)) {
     const { product, className } = props;
+    const [imageError, setImageError] = useState(false);
+
+    // Check wishlist status on mount
+    useEffect(() => {
+      const checkWishlist = async () => {
+        try {
+          const wishlist = await getWishlist();
+          setIsWishlisted(wishlist.includes(product.id));
+        } catch {
+          // Not logged in or error, keep as false
+        }
+      };
+      checkWishlist();
+    }, [product.id]);
+
+    // Handle wishlist toggle
+    const handleWishlistToggle = async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (wishlistLoading) return;
+      
+      setWishlistLoading(true);
+      try {
+        if (isWishlisted) {
+          await removeFromWishlist(product.id);
+          setIsWishlisted(false);
+        } else {
+          await addToWishlist(product.id);
+          setIsWishlisted(true);
+        }
+      } catch (err) {
+        // If not logged in, redirect to login
+        window.location.href = "/account/login";
+      } finally {
+        setWishlistLoading(false);
+      }
+    };
     
     // Check if product has variants
     if (!product.variants || product.variants.length === 0) {
@@ -74,7 +113,7 @@ const ProductCard = (props: ProductCardProps) => {
     }, product.variants[0]);
 
     const price = cheapestVariant ? getVariantPrice(cheapestVariant) : null;
-    const originalPrice = cheapestVariant?.original_price || null;
+    const originalPrice = cheapestVariant?.calculated_price?.original_amount || null;
     const discount = originalPrice && price && originalPrice > price
       ? Math.round(((originalPrice - price) / originalPrice) * 100)
       : null;
@@ -122,32 +161,36 @@ const ProductCard = (props: ProductCardProps) => {
           {/* Action Buttons */}
           <div className="absolute top-2 right-2 flex flex-col gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <button 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsWishlisted(!isWishlisted);
-              }}
+              onClick={handleWishlistToggle}
+              disabled={wishlistLoading}
               className={cn(
-                "w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm transition-colors",
+                "w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm transition-colors disabled:opacity-50",
                 isWishlisted ? "text-red-500" : "text-foreground hover:text-primary"
               )}
             >
-              <Heart className={cn("w-4 h-4", isWishlisted && "fill-current")} />
+              {wishlistLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Heart className={cn("w-4 h-4", isWishlisted && "fill-current")} />
+              )}
             </button>
           </div>
 
           {/* Product Image */}
-          {product.thumbnail ? (
+          {product.thumbnail && !imageError ? (
             <Image
               src={product.thumbnail}
               alt={product.title}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, 25vw"
+              onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center italic text-muted-foreground/50 text-xs">
-              {product.title}
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <span className="text-xs text-muted-foreground text-center px-4">
+                {product.title}
+              </span>
             </div>
           )}
 
@@ -205,6 +248,7 @@ const ProductCard = (props: ProductCardProps) => {
 
   // Handle legacy/mock product
   const { name, price, originalPrice, discount, isNew, image, handle } = props as LegacyProductCardProps;
+  const [legacyImageError, setLegacyImageError] = useState(false);
   
   // Generate product URL from handle or name
   const productUrl = handle 
@@ -242,17 +286,20 @@ const ProductCard = (props: ProductCardProps) => {
         </div>
 
         {/* Product Image (Placeholder or actual) */}
-        {image ? (
+        {image && !legacyImageError ? (
           <Image
             src={image}
             alt={name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 768px) 50vw, 25vw"
+            onError={() => setLegacyImageError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center italic text-muted-foreground/50 text-xs">
-            {name}
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <span className="text-xs text-muted-foreground text-center px-4">
+              {name}
+            </span>
           </div>
         )}
 

@@ -7432,6 +7432,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sgftech/payment-razorpay@npm:^2.1.11":
+  version: 2.1.11
+  resolution: "@sgftech/payment-razorpay@npm:2.1.11"
+  dependencies:
+    razorpay: "npm:^2.9.5"
+  peerDependencies:
+    "@medusajs/admin-sdk": "*"
+    "@medusajs/cli": "*"
+    "@medusajs/framework": ^2.0.0
+    "@medusajs/medusa": "*"
+    awilix: ^8.0.1
+  checksum: 10c0/e509234925c0bbf0c8fd70fe88f22e3be5d19b0fc57ef8f402364670122dd5880afb850db731987988dfd48b570aa95cacb5f6ca01bb0346d80dc790c30545b8
+  languageName: node
+  linkType: hard
+
 "@sinclair/typebox@npm:^0.27.8":
   version: 0.27.10
   resolution: "@sinclair/typebox@npm:0.27.10"
@@ -8959,7 +8974,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.12.0, axios@npm:^1.13.1":
+"axios@npm:^1.12.0, axios@npm:^1.13.1, axios@npm:^1.6.8":
   version: 1.13.5
   resolution: "axios@npm:1.13.5"
   dependencies:
@@ -9058,12 +9073,14 @@ __metadata:
     "@medusajs/framework": "npm:2.13.1"
     "@medusajs/medusa": "npm:2.13.1"
     "@medusajs/test-utils": "npm:2.13.1"
+    "@sgftech/payment-razorpay": "npm:^2.1.11"
     "@swc/core": "npm:^1.7.28"
     "@swc/jest": "npm:^0.2.36"
     "@types/jest": "npm:^29.5.13"
     "@types/node": "npm:^20.12.11"
     "@types/react": "npm:^18.3.2"
     "@types/react-dom": "npm:^18.2.25"
+    cors: "npm:^2.8.5"
     jest: "npm:^29.7.0"
     prop-types: "npm:^15.8.1"
     react: "npm:^18.3.1"
@@ -14253,6 +14270,15 @@ __metadata:
     iconv-lite: "npm:~0.4.24"
     unpipe: "npm:~1.0.0"
   checksum: 10c0/449844344fc90547fb994383a494b83300e4f22199f146a79f68d78a199a8f2a923ea9fd29c3be979bfd50291a3884733619ffc15ba02a32e703b612f8d3f74a
+  languageName: node
+  linkType: hard
+
+"razorpay@npm:^2.9.5":
+  version: 2.9.6
+  resolution: "razorpay@npm:2.9.6"
+  dependencies:
+    axios: "npm:^1.6.8"
+  checksum: 10c0/aeffe41e221ed99c7ca58bf04aa765aee623d5b259075cdcc5fafd28d5fb66e807737186746ddd72499b4c0ef57f7eef766c3932796472c027e07ad89802951c
   languageName: node
   linkType: hard
 

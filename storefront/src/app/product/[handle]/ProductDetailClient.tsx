@@ -13,8 +13,9 @@ import {
   Minus,
   Plus,
   Check,
-  Star,
-  Loader2
+
+  Loader2,
+  Star
 } from "lucide-react";
 import { Product, ProductVariant, formatPrice, getVariantPrice } from "@/lib/medusa";
 import { useCart } from "@/context/CartContext";
@@ -24,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import Reviews from "@/components/Reviews";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -39,6 +41,8 @@ interface ProductDetailClientProps {
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
   const { addItem, isLoading: cartLoading } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [mainImageError, setMainImageError] = useState(false);
+  const [thumbnailErrors, setThumbnailErrors] = useState<Record<number, boolean>>({});
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
     // Initialize with first value of each option
@@ -101,18 +105,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const incrementQuantity = () => setQuantity((q) => Math.min(q + 1, 10));
   const decrementQuantity = () => setQuantity((q) => Math.max(q - 1, 1));
 
-  // Mock reviews data
-  const reviews = {
-    average: 4.8,
-    count: 128,
-    distribution: [
-      { stars: 5, count: 98 },
-      { stars: 4, count: 22 },
-      { stars: 3, count: 5 },
-      { stars: 2, count: 2 },
-      { stars: 1, count: 1 },
-    ],
-  };
+
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -147,7 +140,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               <div className="space-y-4">
                 {/* Main Image */}
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
-                  {product.thumbnail || product.images?.[selectedImage]?.url ? (
+                  {(product.thumbnail || product.images?.[selectedImage]?.url) && !mainImageError ? (
                     <Image
                       src={product.images?.[selectedImage]?.url || product.thumbnail || ""}
                       alt={product.title}
@@ -155,10 +148,13 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       className="object-cover"
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       priority
+                      onError={() => setMainImageError(true)}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground italic">
-                      {product.title}
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <span className="text-muted-foreground text-center px-4">
+                        {product.title}
+                      </span>
                     </div>
                   )}
                   
@@ -192,7 +188,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     {product.images.map((image, index) => (
                       <button
                         key={image.url}
-                        onClick={() => setSelectedImage(index)}
+                        onClick={() => {
+                          setSelectedImage(index);
+                          setMainImageError(false);
+                        }}
                         className={cn(
                           "relative w-20 h-20 flex-shrink-0 overflow-hidden border-2 transition-colors",
                           selectedImage === index 
@@ -200,13 +199,22 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                             : "border-transparent hover:border-primary/50"
                         )}
                       >
-                        <Image
-                          src={image.url}
-                          alt={`${product.title} - ${index + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                        />
+                        {!thumbnailErrors[index] ? (
+                          <Image
+                            src={image.url}
+                            alt={`${product.title} - ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="80px"
+                            onError={() => setThumbnailErrors(prev => ({ ...prev, [index]: true }))}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <span className="text-[10px] text-muted-foreground text-center px-1">
+                              {index + 1}
+                            </span>
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -227,7 +235,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   {product.title}
                 </h1>
 
-                {/* Reviews */}
+                {/* Reviews Summary */}
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -235,16 +243,16 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         key={star}
                         className={cn(
                           "w-4 h-4",
-                          star <= Math.round(reviews.average)
+                          star <= 4
                             ? "fill-amber-400 text-amber-400"
                             : "text-muted-foreground"
                         )}
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {reviews.average} ({reviews.count} reviews)
-                  </span>
+                  <Link href="#reviews" className="text-sm text-muted-foreground hover:text-primary">
+                    See reviews
+                  </Link>
                 </div>
 
                 {/* Price */}
@@ -429,52 +437,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         </section>
 
         {/* Reviews Section */}
-        <section className="py-16 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-2xl font-serif text-primary italic mb-8 text-center">Customer Reviews</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Rating Summary */}
-                <div className="bg-white p-6 border border-border">
-                  <div className="text-center">
-                    <div className="text-5xl font-bold text-primary mb-2">{reviews.average}</div>
-                    <div className="flex items-center justify-center gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={cn(
-                            "w-5 h-5",
-                            star <= Math.round(reviews.average)
-                              ? "fill-amber-400 text-amber-400"
-                              : "text-muted-foreground"
-                          )}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Based on {reviews.count} reviews</p>
-                  </div>
-                </div>
-
-                {/* Rating Distribution */}
-                <div className="space-y-2">
-                  {reviews.distribution.map((item) => (
-                    <div key={item.stars} className="flex items-center gap-3">
-                      <span className="text-sm w-12">{item.stars} star</span>
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-amber-400 rounded-full"
-                          style={{ width: `${(item.count / reviews.count) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-sm text-muted-foreground w-10 text-right">{item.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <Reviews productName={product.title} productHandle={product.handle} />
       </main>
 
       <Footer />

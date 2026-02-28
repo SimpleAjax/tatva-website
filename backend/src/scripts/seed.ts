@@ -63,7 +63,8 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
   const storeModuleService = container.resolve(Modules.STORE);
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  // India as primary country for TATVA jewelry store
+  const countries = ["in"];
 
   logger.info("Seeding store data...");
   const [store] = await storeModuleService.listStores();
@@ -87,12 +88,13 @@ export default async function seedDemoData({ container }: ExecArgs) {
     defaultSalesChannel = salesChannelResult;
   }
 
+  // Update store to use INR as default currency
   await updateStoreCurrencies(container).run({
     input: {
       store_id: store.id,
       supported_currencies: [
         {
-          currency_code: "eur",
+          currency_code: "inr",
           is_default: true,
         },
         {
@@ -115,8 +117,8 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       regions: [
         {
-          name: "Europe",
-          currency_code: "eur",
+          name: "India",
+          currency_code: "inr",
           countries,
           payment_providers: ["pp_system_default"],
         },
@@ -142,11 +144,12 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: "Mumbai Warehouse",
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
-            address_1: "",
+            city: "Mumbai",
+            country_code: "IN",
+            address_1: "123 Jewelry Lane",
+            postal_code: "400001",
           },
         },
       ],
@@ -194,38 +197,14 @@ export default async function seedDemoData({ container }: ExecArgs) {
   }
 
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+    name: "India Delivery",
     type: "shipping",
     service_zones: [
       {
-        name: "Europe",
+        name: "All India",
         geo_zones: [
           {
-            country_code: "gb",
-            type: "country",
-          },
-          {
-            country_code: "de",
-            type: "country",
-          },
-          {
-            country_code: "dk",
-            type: "country",
-          },
-          {
-            country_code: "se",
-            type: "country",
-          },
-          {
-            country_code: "fr",
-            type: "country",
-          },
-          {
-            country_code: "es",
-            type: "country",
-          },
-          {
-            country_code: "it",
+            country_code: "in",
             type: "country",
           },
         ],
@@ -252,21 +231,21 @@ export default async function seedDemoData({ container }: ExecArgs) {
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Standard",
-          description: "Ship in 2-3 days.",
+          description: "Delivered in 5-7 business days",
           code: "standard",
         },
         prices: [
           {
-            currency_code: "usd",
-            amount: 10,
+            currency_code: "inr",
+            amount: 0, // Free shipping
           },
           {
-            currency_code: "eur",
-            amount: 10,
+            currency_code: "usd",
+            amount: 5,
           },
           {
             region_id: region.id,
-            amount: 10,
+            amount: 0,
           },
         ],
         rules: [
@@ -290,21 +269,21 @@ export default async function seedDemoData({ container }: ExecArgs) {
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Express",
-          description: "Ship in 24 hours.",
+          description: "Delivered in 2-3 business days",
           code: "express",
         },
         prices: [
+          {
+            currency_code: "inr",
+            amount: 150,
+          },
           {
             currency_code: "usd",
             amount: 10,
           },
           {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
             region_id: region.id,
-            amount: 10,
+            amount: 150,
           },
         ],
         rules: [
@@ -351,7 +330,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       input: {
         api_keys: [
           {
-            title: "Webshop",
+            title: "TATVA Webshop",
             type: "publishable",
             created_by: "",
           },
@@ -370,7 +349,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   });
   logger.info("Finished seeding publishable API key data.");
 
-  logger.info("Seeding product data...");
+  logger.info("Seeding product categories...");
 
   const { result: categoryResult } = await createProductCategoriesWorkflow(
     container
@@ -378,517 +357,520 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       product_categories: [
         {
-          name: "Shirts",
+          name: "Bracelets",
+          handle: "bracelets",
           is_active: true,
+          description: "Elegant bracelets for every occasion",
         },
         {
-          name: "Sweatshirts",
+          name: "Necklaces",
+          handle: "necklaces",
           is_active: true,
+          description: "Stunning necklaces and pendants",
         },
         {
-          name: "Pants",
+          name: "Earrings",
+          handle: "earrings",
           is_active: true,
+          description: "Beautiful earrings from studs to danglers",
         },
         {
-          name: "Merch",
+          name: "Rings",
+          handle: "rings",
           is_active: true,
+          description: "Exquisite rings for every style",
+        },
+        {
+          name: "Wedding Collection",
+          handle: "wedding-collection",
+          is_active: true,
+          description: "Bridal sets and wedding jewelry",
+        },
+        {
+          name: "Best Sellers",
+          handle: "best-sellers",
+          is_active: true,
+          description: "Our most popular pieces",
+        },
+        {
+          name: "New Arrivals",
+          handle: "new-arrivals",
+          is_active: true,
+          description: "Latest additions to our collection",
+        },
+        {
+          name: "Gifts",
+          handle: "gifts",
+          is_active: true,
+          description: "Perfect gifts for your loved ones",
         },
       ],
     },
   });
 
+  logger.info("Finished seeding product categories.");
+  logger.info("Seeding product data...");
+
+  // Helper to get category ID by name
+  const getCategoryId = (name: string) => 
+    categoryResult.find((cat) => cat.name === name)?.id;
+
   await createProductsWorkflow(container).run({
     input: {
       products: [
+        // Bracelets
         {
-          title: "Medusa T-Shirt",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Shirts")!.id,
-          ],
+          title: "Golden Aura Bracelet",
+          category_ids: [getCategoryId("Bracelets")!, getCategoryId("Best Sellers")!],
           description:
-            "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
-          handle: "t-shirt",
-          weight: 400,
+            "A stunning golden bracelet featuring intricate Kundan work. Perfect for festive occasions and weddings. Handcrafted by master artisans.",
+          handle: "golden-aura-bracelet",
+          weight: 50,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
+
           images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-back.png",
-            },
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-1.jpg" },
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-2.jpg" },
           ],
           options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-            {
-              title: "Color",
-              values: ["Black", "White"],
-            },
+            { title: "Size", values: ["S", "M", "L"] },
           ],
           variants: [
             {
-              title: "S / Black",
-              sku: "SHIRT-S-BLACK",
-              options: {
-                Size: "S",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "Small",
+              sku: "GAB-S",
+              options: { Size: "S" },
+              prices: [{ amount: 129900, currency_code: "inr" }, { amount: 1559, currency_code: "usd" }],
             },
             {
-              title: "S / White",
-              sku: "SHIRT-S-WHITE",
-              options: {
-                Size: "S",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "Medium",
+              sku: "GAB-M",
+              options: { Size: "M" },
+              prices: [{ amount: 129900, currency_code: "inr" }, { amount: 1559, currency_code: "usd" }],
             },
             {
-              title: "M / Black",
-              sku: "SHIRT-M-BLACK",
-              options: {
-                Size: "M",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / White",
-              sku: "SHIRT-M-WHITE",
-              options: {
-                Size: "M",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / Black",
-              sku: "SHIRT-L-BLACK",
-              options: {
-                Size: "L",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / White",
-              sku: "SHIRT-L-WHITE",
-              options: {
-                Size: "L",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / Black",
-              sku: "SHIRT-XL-BLACK",
-              options: {
-                Size: "XL",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / White",
-              sku: "SHIRT-XL-WHITE",
-              options: {
-                Size: "XL",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "Large",
+              sku: "GAB-L",
+              options: { Size: "L" },
+              prices: [{ amount: 139900, currency_code: "inr" }, { amount: 1679, currency_code: "usd" }],
             },
           ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
         {
-          title: "Medusa Sweatshirt",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
-          ],
+          title: "Pearl Charm Bracelet",
+          category_ids: [getCategoryId("Bracelets")!, getCategoryId("New Arrivals")!],
           description:
-            "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
-          handle: "sweatshirt",
-          weight: 400,
+            "Elegant freshwater pearl bracelet with delicate gold-plated charms. A timeless piece for everyday elegance.",
+          handle: "pearl-charm-bracelet",
+          weight: 30,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
+
           images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png",
-            },
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-3.jpg" },
           ],
           options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
+            { title: "Size", values: ["6 inch", "7 inch", "8 inch"] },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SWEATSHIRT-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "6 inch",
+              sku: "PCB-6",
+              options: { Size: "6 inch" },
+              prices: [{ amount: 89900, currency_code: "inr" }, { amount: 1079, currency_code: "usd" }],
             },
             {
-              title: "M",
-              sku: "SWEATSHIRT-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "7 inch",
+              sku: "PCB-7",
+              options: { Size: "7 inch" },
+              prices: [{ amount: 89900, currency_code: "inr" }, { amount: 1079, currency_code: "usd" }],
             },
             {
-              title: "L",
-              sku: "SWEATSHIRT-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATSHIRT-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "8 inch",
+              sku: "PCB-8",
+              options: { Size: "8 inch" },
+              prices: [{ amount: 99900, currency_code: "inr" }, { amount: 1199, currency_code: "usd" }],
             },
           ],
-          sales_channels: [
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        // Necklaces
+        {
+          title: "Elegance Pearl Necklace",
+          category_ids: [getCategoryId("Necklaces")!, getCategoryId("Best Sellers")!],
+          description:
+            "A classic pearl necklace that exudes sophistication. Features lustrous freshwater pearls with an 18K gold-plated clasp.",
+          handle: "elegance-pearl-necklace",
+          weight: 80,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-4.jpg" },
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-5.jpg" },
+          ],
+          options: [
+            { title: "Length", values: ['16"', '18"', '20"'] },
+          ],
+          variants: [
             {
-              id: defaultSalesChannel[0].id,
+              title: '16 inch',
+              sku: "EPN-16",
+              options: { Length: '16"' },
+              prices: [{ amount: 249900, currency_code: "inr" }, { amount: 2999, currency_code: "usd" }],
+            },
+            {
+              title: '18 inch',
+              sku: "EPN-18",
+              options: { Length: '18"' },
+              prices: [{ amount: 269900, currency_code: "inr" }, { amount: 3239, currency_code: "usd" }],
+            },
+            {
+              title: '20 inch',
+              sku: "EPN-20",
+              options: { Length: '20"' },
+              prices: [{ amount: 289900, currency_code: "inr" }, { amount: 3479, currency_code: "usd" }],
             },
           ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
         {
-          title: "Medusa Sweatpants",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Pants")!.id,
-          ],
+          title: "Rose Gold Pendant Set",
+          category_ids: [getCategoryId("Necklaces")!, getCategoryId("Gifts")!],
           description:
-            "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
-          handle: "sweatpants",
-          weight: 400,
+            "A delicate rose gold pendant with matching chain. Features a beautiful floral design that complements both western and ethnic wear.",
+          handle: "rose-gold-pendant",
+          weight: 40,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
+
           images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png",
-            },
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-6.jpg" },
           ],
           options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
+            { title: "Chain", values: ["With Chain", "Without Chain"] },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SWEATPANTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "With Chain",
+              sku: "RGP-WC",
+              options: { Chain: "With Chain" },
+              prices: [{ amount: 219900, currency_code: "inr" }, { amount: 2639, currency_code: "usd" }],
             },
             {
-              title: "M",
-              sku: "SWEATPANTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SWEATPANTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATPANTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "Without Chain",
+              sku: "RGP-NC",
+              options: { Chain: "Without Chain" },
+              prices: [{ amount: 159900, currency_code: "inr" }, { amount: 1919, currency_code: "usd" }],
             },
           ],
-          sales_channels: [
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        // Earrings
+        {
+          title: "Celestial Star Earrings",
+          category_ids: [getCategoryId("Earrings")!, getCategoryId("New Arrivals")!],
+          description:
+            "Stunning star-shaped earrings with sparkling cubic zirconia stones. Available in gold and silver plating.",
+          handle: "celestial-star-earrings",
+          weight: 20,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-7.jpg" },
+          ],
+          options: [
+            { title: "Color", values: ["Gold", "Silver"] },
+          ],
+          variants: [
             {
-              id: defaultSalesChannel[0].id,
+              title: "Gold",
+              sku: "CSE-G",
+              options: { Color: "Gold" },
+              prices: [{ amount: 99900, currency_code: "inr" }, { amount: 1199, currency_code: "usd" }],
+            },
+            {
+              title: "Silver",
+              sku: "CSE-S",
+              options: { Color: "Silver" },
+              prices: [{ amount: 99900, currency_code: "inr" }, { amount: 1199, currency_code: "usd" }],
             },
           ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
         {
-          title: "Medusa Shorts",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Merch")!.id,
-          ],
+          title: "Traditional Jhumka",
+          category_ids: [getCategoryId("Earrings")!, getCategoryId("Wedding Collection")!],
           description:
-            "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
-          handle: "shorts",
-          weight: 400,
+            "Classic Indian jhumka earrings with intricate meenakari work and pearl drops. Perfect for weddings and festive occasions.",
+          handle: "traditional-jhumka",
+          weight: 60,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
+
           images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png",
-            },
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-8.jpg" },
           ],
           options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
+            { title: "Color", values: ["Red", "Green", "Blue"] },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SHORTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "Red",
+              sku: "TJ-R",
+              options: { Color: "Red" },
+              prices: [{ amount: 129900, currency_code: "inr" }, { amount: 1559, currency_code: "usd" }],
             },
             {
-              title: "M",
-              sku: "SHORTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "Green",
+              sku: "TJ-G",
+              options: { Color: "Green" },
+              prices: [{ amount: 129900, currency_code: "inr" }, { amount: 1559, currency_code: "usd" }],
             },
             {
-              title: "L",
-              sku: "SHORTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SHORTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              title: "Blue",
+              sku: "TJ-B",
+              options: { Color: "Blue" },
+              prices: [{ amount: 129900, currency_code: "inr" }, { amount: 1559, currency_code: "usd" }],
             },
           ],
-          sales_channels: [
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        {
+          title: "Diamond Stud Earrings",
+          category_ids: [getCategoryId("Earrings")!, getCategoryId("Best Sellers")!],
+          description:
+            "Elegant diamond stud earrings with brilliant cut cubic zirconia stones set in 925 sterling silver. A must-have for every jewelry collection.",
+          handle: "diamond-stud-earrings",
+          weight: 15,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-9.jpg" },
+          ],
+          options: [
+            { title: "Carat", values: ["0.5ct", "1ct"] },
+          ],
+          variants: [
             {
-              id: defaultSalesChannel[0].id,
+              title: "0.5ct",
+              sku: "DSE-05",
+              options: { Carat: "0.5ct" },
+              prices: [{ amount: 349900, currency_code: "inr" }, { amount: 4199, currency_code: "usd" }],
+            },
+            {
+              title: "1ct",
+              sku: "DSE-1",
+              options: { Carat: "1ct" },
+              prices: [{ amount: 549900, currency_code: "inr" }, { amount: 6599, currency_code: "usd" }],
             },
           ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        // Rings
+        {
+          title: "Infinity Love Ring",
+          category_ids: [getCategoryId("Rings")!, getCategoryId("Gifts")!],
+          description:
+            "A beautiful infinity symbol ring representing eternal love. Crafted in 925 sterling silver with rose gold plating.",
+          handle: "infinity-love-ring",
+          weight: 10,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-10.jpg" },
+          ],
+          options: [
+            { title: "Size", values: ["5", "6", "7", "8", "9", "10"] },
+          ],
+          variants: [
+            { title: "Size 5", sku: "ILR-5", options: { Size: "5" }, prices: [{ amount: 159900, currency_code: "inr" }, { amount: 1919, currency_code: "usd" }] },
+            { title: "Size 6", sku: "ILR-6", options: { Size: "6" }, prices: [{ amount: 159900, currency_code: "inr" }, { amount: 1919, currency_code: "usd" }] },
+            { title: "Size 7", sku: "ILR-7", options: { Size: "7" }, prices: [{ amount: 159900, currency_code: "inr" }, { amount: 1919, currency_code: "usd" }] },
+            { title: "Size 8", sku: "ILR-8", options: { Size: "8" }, prices: [{ amount: 169900, currency_code: "inr" }, { amount: 2039, currency_code: "usd" }] },
+            { title: "Size 9", sku: "ILR-9", options: { Size: "9" }, prices: [{ amount: 169900, currency_code: "inr" }, { amount: 2039, currency_code: "usd" }] },
+            { title: "Size 10", sku: "ILR-10", options: { Size: "10" }, prices: [{ amount: 179900, currency_code: "inr" }, { amount: 2159, currency_code: "usd" }] },
+          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        {
+          title: "Cocktail Statement Ring",
+          category_ids: [getCategoryId("Rings")!, getCategoryId("Best Sellers")!],
+          description:
+            "Bold and beautiful cocktail ring featuring a large colored stone surrounded by cubic zirconia. Perfect for parties and special occasions.",
+          handle: "cocktail-statement-ring",
+          weight: 25,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-11.jpg" },
+          ],
+          options: [
+            { title: "Stone Color", values: ["Emerald Green", "Ruby Red", "Sapphire Blue"] },
+          ],
+          variants: [
+            {
+              title: "Emerald Green",
+              sku: "CSR-E",
+              options: { "Stone Color": "Emerald Green" },
+              prices: [{ amount: 199900, currency_code: "inr" }, { amount: 2399, currency_code: "usd" }],
+            },
+            {
+              title: "Ruby Red",
+              sku: "CSR-R",
+              options: { "Stone Color": "Ruby Red" },
+              prices: [{ amount: 199900, currency_code: "inr" }, { amount: 2399, currency_code: "usd" }],
+            },
+            {
+              title: "Sapphire Blue",
+              sku: "CSR-B",
+              options: { "Stone Color": "Sapphire Blue" },
+              prices: [{ amount: 199900, currency_code: "inr" }, { amount: 2399, currency_code: "usd" }],
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        // Wedding Collection
+        {
+          title: "Bridal Kundan Set",
+          category_ids: [getCategoryId("Wedding Collection")!, getCategoryId("Best Sellers")!],
+          description:
+            "A magnificent bridal set featuring a choker necklace, matching earrings, and maang tikka. Handcrafted with pure Kundan stones and pearl embellishments.",
+          handle: "bridal-kundan-set",
+          weight: 300,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-12.jpg" },
+          ],
+          options: [
+            { title: "Set Type", values: ["Full Set", "Half Set"] },
+          ],
+          variants: [
+            {
+              title: "Full Set",
+              sku: "BKS-F",
+              options: { "Set Type": "Full Set" },
+              prices: [{ amount: 1599900, currency_code: "inr" }, { amount: 19199, currency_code: "usd" }],
+            },
+            {
+              title: "Half Set",
+              sku: "BKS-H",
+              options: { "Set Type": "Half Set" },
+              prices: [{ amount: 999900, currency_code: "inr" }, { amount: 11999, currency_code: "usd" }],
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        // Additional Budget-Friendly Products (Under 999)
+        {
+          title: "Minimalist Bar Necklace",
+          category_ids: [getCategoryId("Necklaces")!],
+          description:
+            "A sleek and modern bar pendant necklace. Perfect for layering or wearing solo for a minimalist look.",
+          handle: "minimalist-bar-necklace",
+          weight: 15,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-13.jpg" },
+          ],
+          options: [
+            { title: "Color", values: ["Gold", "Silver", "Rose Gold"] },
+          ],
+          variants: [
+            {
+              title: "Gold",
+              sku: "MBN-G",
+              options: { Color: "Gold" },
+              prices: [{ amount: 69900, currency_code: "inr" }, { amount: 839, currency_code: "usd" }],
+            },
+            {
+              title: "Silver",
+              sku: "MBN-S",
+              options: { Color: "Silver" },
+              prices: [{ amount: 59900, currency_code: "inr" }, { amount: 719, currency_code: "usd" }],
+            },
+            {
+              title: "Rose Gold",
+              sku: "MBN-R",
+              options: { Color: "Rose Gold" },
+              prices: [{ amount: 69900, currency_code: "inr" }, { amount: 839, currency_code: "usd" }],
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        {
+          title: "Hoop Earrings Set",
+          category_ids: [getCategoryId("Earrings")!],
+          description:
+            "Set of 3 pairs of classic hoop earrings in different sizes. A versatile addition to any jewelry collection.",
+          handle: "hoop-earrings-set",
+          weight: 25,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-14.jpg" },
+          ],
+          options: [
+            { title: "Finish", values: ["Gold Plated", "Silver Plated"] },
+          ],
+          variants: [
+            {
+              title: "Gold Plated",
+              sku: "HES-G",
+              options: { Finish: "Gold Plated" },
+              prices: [{ amount: 79900, currency_code: "inr" }, { amount: 959, currency_code: "usd" }],
+            },
+            {
+              title: "Silver Plated",
+              sku: "HES-S",
+              options: { Finish: "Silver Plated" },
+              prices: [{ amount: 79900, currency_code: "inr" }, { amount: 959, currency_code: "usd" }],
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        },
+        {
+          title: "Crystal Drop Earrings",
+          category_ids: [getCategoryId("Earrings")!, getCategoryId("New Arrivals")!],
+          description:
+            "Elegant crystal drop earrings that catch the light beautifully. Perfect for evening wear and special occasions.",
+          handle: "crystal-drop-earrings",
+          weight: 18,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+
+          images: [
+            { url: "https://ik.imagekit.io/tatva/images/tatva-jewlary-image-15.jpg" },
+          ],
+          options: [
+            { title: "Color", values: ["Clear", "Aurora Borealis"] },
+          ],
+          variants: [
+            {
+              title: "Clear",
+              sku: "CDE-C",
+              options: { Color: "Clear" },
+              prices: [{ amount: 89900, currency_code: "inr" }, { amount: 1079, currency_code: "usd" }],
+            },
+            {
+              title: "Aurora Borealis",
+              sku: "CDE-AB",
+              options: { Color: "Aurora Borealis" },
+              prices: [{ amount: 99900, currency_code: "inr" }, { amount: 1199, currency_code: "usd" }],
+            },
+          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
       ],
     },
@@ -906,7 +888,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   for (const inventoryItem of inventoryItems) {
     const inventoryLevel = {
       location_id: stockLocation.id,
-      stocked_quantity: 1000000,
+      stocked_quantity: 1000,
       inventory_item_id: inventoryItem.id,
     };
     inventoryLevels.push(inventoryLevel);
@@ -919,4 +901,5 @@ export default async function seedDemoData({ container }: ExecArgs) {
   });
 
   logger.info("Finished seeding inventory levels data.");
+  logger.info("✅ TATVA Jewelry Store seed completed successfully!");
 }

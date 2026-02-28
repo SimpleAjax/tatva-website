@@ -3,6 +3,30 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+
+// Component for cart item image with error handling
+function CartItemImage({ thumbnail, title }: { thumbnail: string | null; title: string }) {
+  const [error, setError] = useState(false);
+  
+  if (!thumbnail || error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground bg-muted">
+        No Image
+      </div>
+    );
+  }
+  
+  return (
+    <Image
+      src={thumbnail}
+      alt={title}
+      fill
+      className="object-cover"
+      sizes="64px"
+      onError={() => setError(true)}
+    />
+  );
+}
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -14,14 +38,30 @@ import {
   Package,
   ShieldCheck,
   Lock,
+  AlertTriangle,
+  AlertCircle,
+  Smartphone,
+  Banknote,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import { formatPrice, type Address } from "@/lib/medusa";
+import { formatPrice, type Address, initializePayment, completeCart, getPaymentProviders } from "@/lib/medusa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { 
+  PAYMENT_FLAGS, 
+  getEnabledPaymentMethods, 
+  isPaymentMethodEnabled,
+  isDemoMode,
+  isSandboxMode,
+  getPaymentButtonText,
+  getPaymentModeBadge,
+  getPaymentModeDescription,
+  PaymentMethod,
+} from "@/lib/payment-config";
+import { PaymentMethodCard } from "@/components/payment/PaymentMethodCard";
 
 type CheckoutStep = "shipping" | "delivery" | "payment";
 
@@ -59,6 +99,36 @@ const COUNTRIES = [
   { code: "AU", name: "Australia" },
 ];
 
+// Initialize Razorpay payment
+async function initializeRazorpayPayment(cartId: string, options: { testMode: boolean }) {
+  // This would integrate with Razorpay SDK
+  // For now, we'll simulate the flow
+  console.log("Initializing Razorpay payment:", { cartId, testMode: options.testMode });
+  
+  // Initialize payment session with Razorpay provider
+  const { cart } = await initializePayment(cartId, "razorpay");
+  
+  // In a real implementation, this would open the Razorpay checkout
+  // and handle the payment authorization
+  return cart;
+}
+
+// Initialize Stripe payment
+async function initializeStripePayment(cartId: string, options: { testMode: boolean }) {
+  console.log("Initializing Stripe payment:", { cartId, testMode: options.testMode });
+  const { cart } = await initializePayment(cartId, "stripe");
+  return cart;
+}
+
+// Initialize UPI payment
+async function initializeUpiPayment(cartId: string, upiId: string) {
+  console.log("Initializing UPI payment:", { cartId, upiId });
+  // UPI payments would typically be handled through a provider like Razorpay
+  // or through a direct UPI integration
+  const { cart } = await initializePayment(cartId, "manual");
+  return cart;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const {
@@ -75,10 +145,19 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("shipping");
   const [shippingData, setShippingData] = useState<ShippingFormData>(INITIAL_SHIPPING_DATA);
   const [selectedShippingOption, setSelectedShippingOption] = useState<string>("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("card");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>(() => {
+    // Auto-select first enabled method
+    const enabled = getEnabledPaymentMethods();
+    return enabled[0]?.id || "";
+  });
   const [errors, setErrors] = useState<Partial<Record<keyof ShippingFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
+  const [upiId, setUpiId] = useState("");
+  const [orderError, setOrderError] = useState<string | null>(null);
+
+  const enabledMethods = getEnabledPaymentMethods();
+  const paymentBadge = getPaymentModeBadge();
 
   // Redirect to home if cart is empty
   useEffect(() => {
@@ -151,6 +230,7 @@ export default function CheckoutPage() {
     if (!validateShippingForm()) return;
 
     setIsSubmitting(true);
+    setOrderError(null);
     try {
       // Update email
       await setEmail(shippingData.email);
@@ -182,6 +262,7 @@ export default function CheckoutPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       console.error("Failed to save shipping details:", error);
+      setOrderError("Failed to save shipping details. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -191,20 +272,108 @@ export default function CheckoutPage() {
     if (!selectedShippingOption) return;
 
     setIsSubmitting(true);
+    setOrderError(null);
     try {
       await setShippingMethod(selectedShippingOption);
       setCurrentStep("payment");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       console.error("Failed to set shipping method:", error);
+      setOrderError("Failed to set shipping method. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handlePlaceOrder = async () => {
-    // This is UI only - actual payment processing would be implemented here
-    alert("Order placement is not implemented yet. This is a UI demo.");
+    if (!cart?.id) return;
+    
+    setIsSubmitting(true);
+    setOrderError(null);
+
+    try {
+      // Skip payment flow entirely if flag is set
+      if (PAYMENT_FLAGS.SKIP_PAYMENT) {
+        const { order } = await completeCart(cart.id);
+        router.push(`/order/confirmed/${order.id}?mode=skipped`);
+        return;
+      }
+
+      // Demo mode - simulate payment without actual charge
+      if (isDemoMode()) {
+        if (PAYMENT_FLAGS.DEMO_AUTO_SUCCESS) {
+          // Simulate processing delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          const { order } = await completeCart(cart.id);
+          router.push(`/order/confirmed/${order.id}?mode=demo`);
+          return;
+        }
+      }
+
+      // Sandbox mode - use test credentials
+      if (isSandboxMode()) {
+        switch (selectedPaymentMethod) {
+          case "razorpay":
+            await initializeRazorpayPayment(cart.id, { testMode: true });
+            // In sandbox, we simulate success after provider initialization
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const { order: sandboxOrder } = await completeCart(cart.id);
+            router.push(`/order/confirmed/${sandboxOrder.id}?mode=sandbox`);
+            break;
+          case "stripe":
+            await initializeStripePayment(cart.id, { testMode: true });
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const { order: stripeOrder } = await completeCart(cart.id);
+            router.push(`/order/confirmed/${stripeOrder.id}?mode=sandbox`);
+            break;
+          case "cod":
+          case "upi":
+            const { order: codOrder } = await completeCart(cart.id);
+            router.push(`/order/confirmed/${codOrder.id}?mode=sandbox`);
+            break;
+          default:
+            const { order: defaultOrder } = await completeCart(cart.id);
+            router.push(`/order/confirmed/${defaultOrder.id}?mode=sandbox`);
+        }
+        return;
+      }
+
+      // Production mode - real payment processing
+      switch (selectedPaymentMethod) {
+        case "razorpay":
+          await initializeRazorpayPayment(cart.id, { testMode: false });
+          const { order: rzOrder } = await completeCart(cart.id);
+          router.push(`/order/confirmed/${rzOrder.id}`);
+          break;
+        case "stripe":
+          await initializeStripePayment(cart.id, { testMode: false });
+          const { order: stOrder } = await completeCart(cart.id);
+          router.push(`/order/confirmed/${stOrder.id}`);
+          break;
+        case "cod":
+          const { order: codOrderProd } = await completeCart(cart.id);
+          router.push(`/order/confirmed/${codOrderProd.id}`);
+          break;
+        case "upi":
+          if (!upiId.trim()) {
+            setOrderError("Please enter a valid UPI ID");
+            setIsSubmitting(false);
+            return;
+          }
+          await initializeUpiPayment(cart.id, upiId);
+          const { order: upiOrder } = await completeCart(cart.id);
+          router.push(`/order/confirmed/${upiOrder.id}`);
+          break;
+        default:
+          const { order: defaultOrderProd } = await completeCart(cart.id);
+          router.push(`/order/confirmed/${defaultOrderProd.id}`);
+      }
+    } catch (error) {
+      console.error("Failed to place order:", error);
+      setOrderError("Failed to place order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: keyof ShippingFormData, value: string) => {
@@ -241,10 +410,23 @@ export default function CheckoutPage() {
             <Link href="/" className="text-xl font-serif tracking-wider">
               TATVA
             </Link>
-            <Badge variant="outline" className="rounded-none uppercase tracking-wider text-xs">
-              <Lock className="w-3 h-3 mr-1" />
-              Secure Checkout
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="rounded-none uppercase tracking-wider text-xs">
+                <Lock className="w-3 h-3 mr-1" />
+                Secure Checkout
+              </Badge>
+              {(isDemoMode() || isSandboxMode() || PAYMENT_FLAGS.SKIP_PAYMENT) && (
+                <Badge 
+                  variant={paymentBadge.variant === "warning" ? "outline" : "secondary"}
+                  className={cn(
+                    "rounded-none uppercase tracking-wider text-xs",
+                    paymentBadge.variant === "warning" && "border-amber-500 text-amber-600"
+                  )}
+                >
+                  {paymentBadge.text}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -306,6 +488,16 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Checkout Form */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Error Message */}
+            {orderError && (
+              <div className="bg-destructive/10 border border-destructive p-4 rounded-none">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-destructive" />
+                  <span className="text-destructive font-medium">{orderError}</span>
+                </div>
+              </div>
+            )}
+
             {/* Shipping Step */}
             {currentStep === "shipping" && (
               <div className="space-y-6">
@@ -648,98 +840,77 @@ export default function CheckoutPage() {
                 <div>
                   <h2 className="text-xl font-medium mb-1">Payment</h2>
                   <p className="text-sm text-muted-foreground">
-                    All transactions are secure and encrypted
+                    {getPaymentModeDescription()}
                   </p>
                 </div>
 
-                {/* Payment Methods */}
-                <div className="space-y-3">
-                  {/* Credit Card */}
-                  <label
-                    className={cn(
-                      "flex items-center gap-4 p-4 border cursor-pointer transition-colors",
-                      selectedPaymentMethod === "card"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground/50"
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="card"
-                      checked={selectedPaymentMethod === "card"}
-                      onChange={() => setSelectedPaymentMethod("card")}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">Credit / Debit Card</p>
-                      <p className="text-sm text-muted-foreground">
-                        Visa, Mastercard, RuPay, and more
-                      </p>
-                    </div>
+                {/* Mode Indicator */}
+                {(isDemoMode() || isSandboxMode() || PAYMENT_FLAGS.SKIP_PAYMENT) && (
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-none">
                     <div className="flex items-center gap-2">
-                      <div className="w-10 h-6 bg-muted rounded flex items-center justify-center text-xs">
-                        VISA
-                      </div>
-                      <div className="w-10 h-6 bg-muted rounded flex items-center justify-center text-xs">
-                        MC
-                      </div>
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      <span className="font-medium text-amber-800">
+                        {PAYMENT_FLAGS.SKIP_PAYMENT 
+                          ? "Payment Step Skipped" 
+                          : isDemoMode() 
+                            ? "Demo Mode Active" 
+                            : "Sandbox/Test Mode Active"}
+                      </span>
                     </div>
-                  </label>
+                    <p className="text-sm text-amber-700 mt-1">
+                      {PAYMENT_FLAGS.SKIP_PAYMENT
+                        ? "Payment will be skipped and order will be placed immediately."
+                        : isDemoMode() 
+                          ? "Payments will be simulated. No actual charges will occur." 
+                          : "Use test credentials shown below. No real money will be charged."}
+                    </p>
+                  </div>
+                )}
 
-                  {/* UPI */}
-                  <label
-                    className={cn(
-                      "flex items-center gap-4 p-4 border cursor-pointer transition-colors",
-                      selectedPaymentMethod === "upi"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground/50"
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="upi"
-                      checked={selectedPaymentMethod === "upi"}
-                      onChange={() => setSelectedPaymentMethod("upi")}
-                      className="w-4 h-4 accent-primary"
+                {/* Payment Methods - Only Show Enabled */}
+                <div className="space-y-3">
+                  {enabledMethods.map((method) => (
+                    <PaymentMethodCard
+                      key={method.id}
+                      method={method}
+                      selected={selectedPaymentMethod === method.id}
+                      onSelect={() => setSelectedPaymentMethod(method.id)}
+                      testCredentials={isSandboxMode() ? method.sandboxConfig : undefined}
                     />
-                    <div className="flex-1">
-                      <p className="font-medium">UPI</p>
+                  ))}
+                  
+                  {enabledMethods.length === 0 && (
+                    <div className="text-center py-8 bg-muted">
+                      <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        Pay via UPI apps like GPay, PhonePe, Paytm
+                        No payment methods available. Please contact support.
                       </p>
                     </div>
-                  </label>
-
-                  {/* Cash on Delivery */}
-                  <label
-                    className={cn(
-                      "flex items-center gap-4 p-4 border cursor-pointer transition-colors",
-                      selectedPaymentMethod === "cod"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground/50"
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="cod"
-                      checked={selectedPaymentMethod === "cod"}
-                      onChange={() => setSelectedPaymentMethod("cod")}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">Cash on Delivery</p>
-                      <p className="text-sm text-muted-foreground">
-                        Pay when your order is delivered
-                      </p>
-                    </div>
-                  </label>
+                  )}
                 </div>
 
-                {/* Card Form (shown only when card is selected) */}
-                {selectedPaymentMethod === "card" && (
+                {/* UPI Form (shown only when UPI is selected) */}
+                {selectedPaymentMethod === "upi" && isPaymentMethodEnabled("upi") && (
+                  <div className="border border-border p-4 space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-[0.15em] mb-2">
+                        UPI ID
+                      </label>
+                      <Input
+                        placeholder="yourname@upi"
+                        value={upiId}
+                        onChange={(e) => setUpiId(e.target.value)}
+                        className="rounded-none h-11"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter your UPI ID (e.g., yourname@okaxis, yourname@paytm)
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Card Form (shown only when card is selected in demo/production without redirect) */}
+                {selectedPaymentMethod === "card" && isPaymentMethodEnabled("card") && (
                   <div className="border border-border p-4 space-y-4">
                     <div>
                       <label className="block text-xs font-medium uppercase tracking-[0.15em] mb-2">
@@ -774,10 +945,12 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Security Notice */}
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <ShieldCheck className="w-5 h-5 text-primary" />
-                  <span>Your payment information is secure and encrypted</span>
-                </div>
+                {!isDemoMode() && !isSandboxMode() && !PAYMENT_FLAGS.SKIP_PAYMENT && (
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                    <span>Your payment information is secure and encrypted</span>
+                  </div>
+                )}
 
                 {/* Navigation */}
                 <div className="flex items-center justify-between pt-6">
@@ -790,10 +963,10 @@ export default function CheckoutPage() {
                   </button>
                   <Button
                     onClick={handlePlaceOrder}
-                    disabled={isSubmitting || isLoading}
+                    disabled={!selectedPaymentMethod || enabledMethods.length === 0 || isSubmitting}
                     className="bg-primary hover:bg-primary/90 text-white rounded-none px-8 py-6 text-sm tracking-[0.15em] uppercase font-bold h-auto"
                   >
-                    {isSubmitting ? "Processing..." : "Place Order"}
+                    {isSubmitting ? "Processing..." : getPaymentButtonText()}
                     <Lock className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -813,19 +986,7 @@ export default function CheckoutPage() {
                 {cart.items.map((item) => (
                   <div key={item.id} className="flex gap-3">
                     <div className="relative w-16 h-16 bg-background flex-shrink-0 overflow-hidden">
-                      {item.thumbnail ? (
-                        <Image
-                          src={item.thumbnail}
-                          alt={item.title}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                          No Image
-                        </div>
-                      )}
+                      <CartItemImage thumbnail={item.thumbnail} title={item.title} />
                       <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs flex items-center justify-center">
                         {item.quantity}
                       </div>

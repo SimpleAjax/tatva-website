@@ -2,6 +2,9 @@
 const MEDUSA_BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9111";
 const MEDUSA_PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_API_KEY || "";
 
+// Direct backend calls - CORS should be configured on backend
+const API_BASE_URL = MEDUSA_BACKEND_URL;
+
 // Types based on Medusa API
 export interface Product {
   id: string;
@@ -18,6 +21,13 @@ export interface Product {
   metadata: Record<string, any> | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CalculatedPrice {
+  id: string;
+  calculated_amount: number;
+  original_amount: number;
+  currency_code: string;
 }
 
 export interface ProductVariant {
@@ -39,8 +49,7 @@ export interface ProductVariant {
   width: number | null;
   options: ProductVariantOption[];
   prices: MoneyAmount[];
-  original_price?: number;
-  calculated_price?: number;
+  calculated_price?: CalculatedPrice;
   inventory_quantity: number;
   metadata: Record<string, any> | null;
 }
@@ -81,6 +90,7 @@ export interface Category {
   id: string;
   name: string;
   handle: string;
+  description?: string;
 }
 
 export interface Cart {
@@ -243,7 +253,7 @@ export interface ShippingOptionWithPrice {
 
 // API Helper functions
 async function fetchFromMedusa(endpoint: string, options: RequestInit = {}) {
-  const url = `${MEDUSA_BACKEND_URL}${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
   
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -352,8 +362,11 @@ export async function getProducts(params?: {
   collection_id?: string;
   handle?: string;
   q?: string;
+  region_id?: string;
 }): Promise<{ products: Product[]; count: number; offset: number; limit: number }> {
   const searchParams = new URLSearchParams();
+  
+  // Add params
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) searchParams.append(key, String(value));
@@ -361,6 +374,18 @@ export async function getProducts(params?: {
   }
   
   return fetchFromMedusa(`/store/products?${searchParams.toString()}`);
+}
+
+// Get products with automatic region resolution for pricing
+export async function getProductsWithPricing(params?: Omit<Parameters<typeof getProducts>[0], 'region_id'>): Promise<{ products: Product[]; count: number; offset: number; limit: number }> {
+  // Dynamic import to avoid circular dependency
+  const { getDefaultRegionId } = await import('./regions');
+  const regionId = await getDefaultRegionId();
+  
+  return getProducts({
+    ...params,
+    region_id: regionId,
+  });
 }
 
 export async function getProductByHandle(handle: string): Promise<{ product: Product }> {
@@ -399,6 +424,230 @@ export async function getCategories(): Promise<{ product_categories: Category[] 
   return fetchFromMedusa("/store/product-categories");
 }
 
+// ============================================
+// Customer Authentication API
+// ============================================
+
+export interface Customer {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  billing_address?: Address;
+  shipping_addresses?: Address[];
+  orders?: Order[];
+  created_at: string;
+  updated_at: string;
+  metadata?: Record<string, any>;
+}
+
+export interface Order {
+  id: string;
+  status: string;
+  fulfillment_status: string;
+  payment_status: string;
+  display_id: string;
+  total: number;
+  subtotal: number;
+  tax_total: number;
+  shipping_total: number;
+  discount_total: number;
+  currency_code: string;
+  created_at: string;
+  updated_at: string;
+  items: LineItem[];
+  shipping_address?: Address;
+  billing_address?: Address;
+}
+
+export interface AuthResponse {
+  customer: Customer;
+}
+
+export async function registerCustomer(data: {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+}): Promise<AuthResponse> {
+  return fetchFromMedusa("/store/customers", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function loginCustomer(data: {
+  email: string;
+  password: string;
+}): Promise<{ customer: Customer; token?: string }> {
+  // First authenticate to get session
+  const authResponse = await fetchFromMedusa("/store/auth", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  
+  // Then get customer data
+  const customerResponse = await getCurrentCustomer();
+  
+  return { ...authResponse, ...customerResponse };
+}
+
+export async function logoutCustomer(): Promise<void> {
+  return fetchFromMedusa("/store/auth", {
+    method: "DELETE",
+  });
+}
+
+export async function getCurrentCustomer(): Promise<AuthResponse> {
+  return fetchFromMedusa("/store/customers/me");
+}
+
+export async function updateCustomer(data: Partial<Customer>): Promise<AuthResponse> {
+  return fetchFromMedusa("/store/customers/me", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getCustomerOrders(): Promise<{ orders: Order[] }> {
+  return fetchFromMedusa("/store/customers/me/orders");
+}
+
+export async function addCustomerAddress(data: Partial<Address>): Promise<{ customer: Customer }> {
+  return fetchFromMedusa("/store/customers/me/addresses", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateCustomerAddress(addressId: string, data: Partial<Address>): Promise<{ customer: Customer }> {
+  return fetchFromMedusa(`/store/customers/me/addresses/${addressId}`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCustomerAddress(addressId: string): Promise<void> {
+  return fetchFromMedusa(`/store/customers/me/addresses/${addressId}`, {
+    method: "DELETE",
+  });
+}
+
+// ============================================
+// Wishlist API (using customer metadata)
+// ============================================
+
+export async function getWishlist(): Promise<string[]> {
+  try {
+    const { customer } = await getCurrentCustomer();
+    return customer.metadata?.wishlist || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addToWishlist(productId: string): Promise<void> {
+  const { customer } = await getCurrentCustomer();
+  const wishlist = customer.metadata?.wishlist || [];
+  
+  if (!wishlist.includes(productId)) {
+    wishlist.push(productId);
+    await updateCustomer({
+      metadata: { ...customer.metadata, wishlist }
+    });
+  }
+}
+
+export async function removeFromWishlist(productId: string): Promise<void> {
+  const { customer } = await getCurrentCustomer();
+  const wishlist = customer.metadata?.wishlist || [];
+  
+  const updatedWishlist = wishlist.filter((id: string) => id !== productId);
+  await updateCustomer({
+    metadata: { ...customer.metadata, wishlist: updatedWishlist }
+  });
+}
+
+// ============================================
+// Payment API Functions
+// ============================================
+
+/**
+ * Initialize payment session for a cart
+ * Creates a payment session with the selected provider
+ */
+export async function initializePayment(
+  cartId: string, 
+  providerId: string
+): Promise<{ cart: Cart }> {
+  return fetchFromMedusa(`/store/carts/${cartId}/payment-sessions`, {
+    method: "POST",
+    body: JSON.stringify({ provider_id: providerId }),
+  });
+}
+
+/**
+ * Update existing payment session
+ * Use when cart totals change or payment method needs refresh
+ */
+export async function updatePaymentSession(
+  cartId: string, 
+  providerId: string
+): Promise<{ cart: Cart }> {
+  return fetchFromMedusa(`/store/carts/${cartId}/payment-sessions/${providerId}`, {
+    method: "POST",
+  });
+}
+
+/**
+ * Authorize payment session
+ * Called after collecting payment details (card, UPI, etc.)
+ */
+export async function authorizePaymentSession(
+  cartId: string,
+  providerId: string,
+  data?: Record<string, any>
+): Promise<{ cart: Cart }> {
+  return fetchFromMedusa(`/store/carts/${cartId}/payment-sessions/${providerId}/authorize`, {
+    method: "POST",
+    body: JSON.stringify(data || {}),
+  });
+}
+
+/**
+ * Complete cart and create order
+ * Final step after payment is authorized
+ */
+export async function completeCart(cartId: string): Promise<{ order: Order; cart?: Cart }> {
+  return fetchFromMedusa(`/store/carts/${cartId}/complete`, {
+    method: "POST",
+  });
+}
+
+/**
+ * Get available payment providers
+ * Returns list of configured payment methods from backend
+ */
+export async function getPaymentProviders(regionId?: string): Promise<{ 
+  payment_providers: Array<{
+    id: string;
+    is_installed: boolean;
+  }> 
+}> {
+  const params = regionId ? `?region_id=${regionId}` : "";
+  return fetchFromMedusa(`/store/payment-providers${params}`);
+}
+
+/**
+ * Get order by ID
+ * Used on order confirmation page
+ */
+export async function getOrder(orderId: string): Promise<{ order: Order }> {
+  return fetchFromMedusa(`/store/orders/${orderId}`);
+}
+
 // Helper function to format price
 export function formatPrice(amount: number, currencyCode: string = "INR"): string {
   const formatter = new Intl.NumberFormat("en-IN", {
@@ -412,6 +661,12 @@ export function formatPrice(amount: number, currencyCode: string = "INR"): strin
 
 // Calculate price for a variant
 export function getVariantPrice(variant: ProductVariant, currencyCode: string = "inr"): number | null {
+  // Medusa v2 returns calculated_price object when region_id is passed
+  if (variant?.calculated_price?.calculated_amount && variant.calculated_price.calculated_amount > 0) {
+    return variant.calculated_price.calculated_amount;
+  }
+  
+  // Fallback to prices array
   if (!variant?.prices || !Array.isArray(variant.prices)) {
     return null;
   }

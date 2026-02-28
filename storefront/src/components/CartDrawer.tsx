@@ -1,8 +1,32 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+
+// Cart item image with error handling
+function CartItemImage({ thumbnail, title }: { thumbnail: string | null; title: string }) {
+  const [error, setError] = useState(false);
+  
+  if (!thumbnail || error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground bg-muted">
+        No Image
+      </div>
+    );
+  }
+  
+  return (
+    <Image
+      src={thumbnail}
+      alt={title}
+      fill
+      className="object-cover"
+      sizes="80px"
+      onError={() => setError(true)}
+    />
+  );
+}
 import { X, Plus, Minus, ShoppingBag, ArrowRight, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/medusa";
@@ -70,19 +94,7 @@ export default function CartDrawer() {
                   <div key={item.id} className="flex gap-4">
                     {/* Product Image */}
                     <div className="relative w-20 h-24 bg-muted flex-shrink-0 overflow-hidden">
-                      {item.thumbnail ? (
-                        <Image
-                          src={item.thumbnail}
-                          alt={item.title}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                          No Image
-                        </div>
-                      )}
+                      <CartItemImage thumbnail={item.thumbnail} title={item.title} />
                     </div>
 
                     {/* Product Info */}

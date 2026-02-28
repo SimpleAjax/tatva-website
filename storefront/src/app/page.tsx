@@ -2,62 +2,32 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import Header from "@/components/Header";
 import HeroBanner from "@/components/HeroBanner";
 import CategoryCircles from "@/components/CategoryCircles";
-import ReelCard from "@/components/ReelCard";
 import ProductCard from "@/components/ProductCard";
 import InfoBar from "@/components/InfoBar";
 import Collections from "@/components/Collections";
-import Reviews from "@/components/Reviews";
+import TestimonialsMarquee from "@/components/TestimonialsMarquee";
 import Footer from "@/components/Footer";
-import { getProducts, Product } from "@/lib/medusa";
+import BestSellersReels from "@/components/BestSellersReels";
+import { getProducts, getCategories, Product } from "@/lib/medusa";
+import { getDefaultRegionId } from "@/lib/regions";
+import { bestSellersData } from "@/lib/imagekit";
 
-// Mock Data for Reels (these would come from a CMS or API)
-const bestSellersReels = [
-  {
-    productName: "Golden Aura Bracelet",
-    price: "₹1,299",
-    originalPrice: "₹1,899",
-    discount: "30%",
-    likes: "2.4K",
-    views: "15.2K",
-    shares: "450",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-jewelry-in-a-box-41589-large.mp4"
-  },
-  {
-    productName: "Elegance Pearl Necklace",
-    price: "₹2,499",
-    originalPrice: "₹3,499",
-    discount: "28%",
-    likes: "1.8K",
-    views: "12.1K",
-    shares: "230",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-necklaces-and-rings-set-41595-large.mp4"
-  },
-  {
-    productName: "Celestial Star Earrings",
-    price: "₹999",
-    originalPrice: "₹1,299",
-    discount: "23%",
-    likes: "3.2K",
-    views: "22.5K",
-    shares: "890",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-woman-wearing-shiny-earrings-and-necklaces-41593-large.mp4"
-  },
-  {
-    productName: "Infinity Love Ring",
-    price: "₹1,599",
-    originalPrice: "₹2,199",
-    discount: "27%",
-    likes: "1.5K",
-    views: "10.8K",
-    shares: "120",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-person-showing-a-jewelry-ring-41604-large.mp4"
-  },
-];
-
-async function getNewArrivals(): Promise<Product[]> {
+async function getNewArrivals(regionId?: string): Promise<Product[]> {
   try {
-    const { products } = await getProducts({ limit: 4 });
-    console.log(`[Home] Fetched ${products.length} new arrivals`);
+    const { product_categories } = await getCategories();
+    const category = product_categories.find(cat => cat.handle === "new-arrivals");
+    
+    if (!category) {
+      // Fallback to all products if category not found
+      const { products } = await getProducts({ limit: 4, region_id: regionId });
+      return products;
+    }
+    
+    const { products } = await getProducts({ 
+      limit: 4,
+      category_id: category.id,
+      region_id: regionId
+    });
     return products;
   } catch (error) {
     console.error("[Home] Failed to fetch new arrivals:", error);
@@ -65,9 +35,21 @@ async function getNewArrivals(): Promise<Product[]> {
   }
 }
 
-async function getBestSellers(): Promise<Product[]> {
+async function getBestSellers(regionId?: string): Promise<Product[]> {
   try {
-    const { products } = await getProducts({ limit: 4 });
+    const { product_categories } = await getCategories();
+    const category = product_categories.find(cat => cat.handle === "best-sellers");
+    
+    if (!category) {
+      const { products } = await getProducts({ limit: 4, region_id: regionId });
+      return products;
+    }
+    
+    const { products } = await getProducts({ 
+      limit: 4,
+      category_id: category.id,
+      region_id: regionId
+    });
     return products;
   } catch (error) {
     console.error("Failed to fetch best sellers:", error);
@@ -75,9 +57,21 @@ async function getBestSellers(): Promise<Product[]> {
   }
 }
 
-async function getWeddingProducts(): Promise<Product[]> {
+async function getWeddingProducts(regionId?: string): Promise<Product[]> {
   try {
-    const { products } = await getProducts({ limit: 4 });
+    const { product_categories } = await getCategories();
+    const category = product_categories.find(cat => cat.handle === "wedding-collection");
+    
+    if (!category) {
+      const { products } = await getProducts({ limit: 4, region_id: regionId });
+      return products;
+    }
+    
+    const { products } = await getProducts({ 
+      limit: 4,
+      category_id: category.id,
+      region_id: regionId
+    });
     return products;
   } catch (error) {
     console.error("Failed to fetch wedding products:", error);
@@ -85,19 +79,39 @@ async function getWeddingProducts(): Promise<Product[]> {
   }
 }
 
-async function getBudgetProducts(): Promise<Product[]> {
+async function getBudgetProducts(regionId?: string): Promise<Product[]> {
   try {
-    const { products } = await getProducts({ limit: 4 });
-    return products;
+    // Get products under ₹999 (99900 paise)
+    const { products } = await getProducts({ limit: 20, region_id: regionId });
+    // Filter products that have variants with prices under ₹999
+    return products.filter(product => {
+      const cheapestVariant = product.variants?.reduce((min, variant) => {
+        const price = variant.prices?.find(p => p.currency_code === 'inr')?.amount || Infinity;
+        return price < min ? price : min;
+      }, Infinity);
+      return cheapestVariant <= 99900;
+    }).slice(0, 4);
   } catch (error) {
     console.error("Failed to fetch budget products:", error);
     return [];
   }
 }
 
-async function getGiftProducts(): Promise<Product[]> {
+async function getGiftProducts(regionId?: string): Promise<Product[]> {
   try {
-    const { products } = await getProducts({ limit: 5 });
+    const { product_categories } = await getCategories();
+    const category = product_categories.find(cat => cat.handle === "gifts");
+    
+    if (!category) {
+      const { products } = await getProducts({ limit: 5, region_id: regionId });
+      return products;
+    }
+    
+    const { products } = await getProducts({ 
+      limit: 5,
+      category_id: category.id,
+      region_id: regionId
+    });
     return products;
   } catch (error) {
     console.error("Failed to fetch gift products:", error);
@@ -106,13 +120,16 @@ async function getGiftProducts(): Promise<Product[]> {
 }
 
 export default async function Home() {
-  // Fetch products from Medusa
+  // Get default region (India/INR) - cached after first call
+  const regionId = await getDefaultRegionId();
+
+  // Fetch products from Medusa with region for pricing
   const [newArrivals, bestSellers, weddingProducts, budgetProducts, giftProducts] = await Promise.all([
-    getNewArrivals(),
-    getBestSellers(),
-    getWeddingProducts(),
-    getBudgetProducts(),
-    getGiftProducts(),
+    getNewArrivals(regionId),
+    getBestSellers(regionId),
+    getWeddingProducts(regionId),
+    getBudgetProducts(regionId),
+    getGiftProducts(regionId),
   ]);
 
   return (
@@ -133,7 +150,7 @@ export default async function Home() {
               <span className="text-primary text-[10px] font-bold tracking-[0.2em] uppercase">Just In</span>
               <h2 className="text-3xl font-serif text-primary italic">Fresh Drops</h2>
             </div>
-            <button className="text-xs font-bold uppercase tracking-widest border-b border-primary text-primary pb-1 hover:opacity-80">View All</button>
+            <a href="/category/new-arrivals" className="text-xs font-bold uppercase tracking-widest border-b border-primary text-primary pb-1 hover:opacity-80">View All</a>
           </div>
           {newArrivals.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -149,28 +166,7 @@ export default async function Home() {
         </section>
 
         {/* Best Sellers (Instagram Reels Style) Section */}
-        <section className="py-16 lg:py-24 bg-zinc-50 overflow-hidden">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <span className="text-primary text-[10px] lg:text-[11px] font-bold tracking-[0.4em] uppercase">Trending Now</span>
-              <h2 className="text-4xl font-serif text-primary italic mt-2">Best Sellers</h2>
-              <div className="w-24 h-0.5 bg-primary/20 mx-auto mt-4" />
-            </div>
-
-            {/* Reels Grid / Carousel */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto">
-              {bestSellersReels.map((reel, i) => (
-                <ReelCard key={i} {...reel} />
-              ))}
-            </div>
-
-            <div className="mt-16 text-center">
-              <button className="bg-primary hover:bg-primary/90 text-white transition-all px-12 py-4 tracking-widest uppercase font-bold text-xs shadow-lg rounded-full">
-                Explore More Reels
-              </button>
-            </div>
-          </div>
-        </section>
+        <BestSellersReels reels={bestSellersData} />
 
         {/* 2. The Wedding Edit */}
         <section className="py-20 bg-[#FDF8F8]">
@@ -184,9 +180,9 @@ export default async function Home() {
                   <p className="text-zinc-600 text-sm leading-relaxed">
                     Handcrafted perfection for your special day. Explore our exclusive bridal collection featuring Kundan, Polki, and Antique Gold designs.
                   </p>
-                  <button className="bg-primary text-white px-8 py-3 text-xs font-bold uppercase tracking-widest shadow-md hover:bg-primary/90">
+                  <a href="/category/wedding-collection" className="bg-primary text-white px-8 py-3 text-xs font-bold uppercase tracking-widest shadow-md hover:bg-primary/90 inline-block">
                     Shop Bridal
-                  </button>
+                  </a>
                 </div>
               </div>
               {/* Products Grid */}
@@ -257,9 +253,9 @@ export default async function Home() {
                     <span key={tag} className="px-4 py-2 bg-white border border-border text-[10px] font-bold tracking-widest uppercase">{tag}</span>
                   ))}
                 </div>
-                <button className="bg-primary hover:bg-primary/90 text-white px-12 py-4 tracking-widest uppercase font-bold text-xs transition-colors shadow-lg">
+                <a href="/category/bracelets" className="bg-primary hover:bg-primary/90 text-white px-12 py-4 tracking-widest uppercase font-bold text-xs transition-colors shadow-lg inline-block">
                   Explore Styles
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -283,12 +279,12 @@ export default async function Home() {
             </div>
           )}
           <div className="mt-10 text-center">
-            <button className="border-b-2 border-primary text-primary font-bold text-xs uppercase tracking-widest pb-1 hover:text-primary/80">View All Budget Buys</button>
+            <a href="/category/earrings" className="border-b-2 border-primary text-primary font-bold text-xs uppercase tracking-widest pb-1 hover:text-primary/80">View All Budget Buys</a>
           </div>
         </section>
 
-        {/* Reviews Section */}
-        <Reviews />
+        {/* Testimonials Marquee Section */}
+        <TestimonialsMarquee />
       </main>
 
       <Footer />
