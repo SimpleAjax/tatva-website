@@ -17,6 +17,7 @@ interface ReelCardProps {
     videoPath?: string;
     imagePath?: string;
     priority?: boolean; // Load immediately if true
+    compact?: boolean; // Smaller size for horizontal scroll
 }
 
 const ReelCard = ({
@@ -30,6 +31,7 @@ const ReelCard = ({
     videoPath,
     imagePath,
     priority = false,
+    compact = false,
 }: ReelCardProps) => {
     const [isLiked, setIsLiked] = useState(false);
     const [videoState, setVideoState] = useState<'loading' | 'playing' | 'error'>('loading');
@@ -119,7 +121,12 @@ const ReelCard = ({
     return (
         <div 
             ref={containerRef}
-            className="relative w-full aspect-[9/16] bg-black overflow-hidden rounded-2xl shadow-2xl group border border-zinc-800"
+            className={cn(
+                "relative w-full bg-black overflow-hidden group border border-zinc-800",
+                compact 
+                    ? "aspect-[9/16] rounded-xl shadow-lg" 
+                    : "aspect-[9/16] rounded-2xl shadow-2xl"
+            )}
         >
             {/* Poster Image (shown while loading or on error) */}
             {(videoState === 'loading' || videoState === 'error') && thumbnailUrl && (
@@ -162,17 +169,17 @@ const ReelCard = ({
             {/* Loading State */}
             {videoState === 'loading' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    <Loader2 className={cn("text-white animate-spin", compact ? "w-5 h-5" : "w-8 h-8")} />
                 </div>
             )}
 
             {/* Error State with Retry */}
             {videoState === 'error' && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20">
-                    <p className="text-white/80 text-sm mb-2">Video unavailable</p>
+                    <p className={cn("text-white/80 mb-2", compact ? "text-[10px]" : "text-sm")}>Video unavailable</p>
                     <button 
                         onClick={handleRetry}
-                        className="px-4 py-2 bg-primary text-white text-xs rounded-full hover:bg-primary/80 transition-colors"
+                        className={cn("bg-primary text-white rounded-full hover:bg-primary/80 transition-colors", compact ? "px-2 py-1 text-[8px]" : "px-4 py-2 text-xs")}
                     >
                         Retry
                     </button>
@@ -182,50 +189,52 @@ const ReelCard = ({
             {/* No Video Fallback */}
             {!videoUrl && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-900 to-black">
-                    <div className="text-center p-4">
-                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-zinc-800 flex items-center justify-center">
-                            <span className="text-2xl">💎</span>
+                    <div className={cn("text-center", compact ? "p-2" : "p-4")}>
+                        <div className={cn("mx-auto mb-2 rounded-full bg-zinc-800 flex items-center justify-center", compact ? "w-8 h-8" : "w-16 h-16")}>
+                            <span className={compact ? "text-base" : "text-2xl"}>💎</span>
                         </div>
-                        <p className="text-white/60 text-xs">{productName}</p>
+                        <p className={cn("text-white/60", compact ? "text-[8px]" : "text-xs")}>{productName}</p>
                     </div>
                 </div>
             )}
 
             {/* Overlay Gradients */}
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none z-10" />
-            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none z-10" />
+            <div className={cn("absolute inset-x-0 top-0 bg-gradient-to-b from-black/40 to-transparent pointer-events-none z-10", compact ? "h-12" : "h-24")} />
+            <div className={cn("absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none z-10", compact ? "h-24" : "h-48")} />
 
-            {/* Top Header */}
-            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-                <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full border-2 border-primary bg-white flex items-center justify-center text-[10px] font-bold text-primary">T</div>
-                    <span className="text-white text-xs font-bold tracking-widest shadow-sm">TATVA.TRIBE</span>
+            {/* Top Header - Hidden in compact mode for cleaner look */}
+            {!compact && (
+                <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
+                    <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-full border-2 border-primary bg-white flex items-center justify-center text-[10px] font-bold text-primary">T</div>
+                        <span className="text-white text-xs font-bold tracking-widest shadow-sm">TATVA.TRIBE</span>
+                    </div>
+                    <MoreVertical className="text-white w-5 h-5 cursor-pointer" />
                 </div>
-                <MoreVertical className="text-white w-5 h-5 cursor-pointer" />
-            </div>
+            )}
 
             {/* Right Action Icons (Instagram Style) */}
-            <div className="absolute right-3 bottom-24 flex flex-col items-center space-y-6 z-20">
+            <div className={cn("absolute right-2 flex flex-col items-center z-20", compact ? "bottom-16 space-y-2" : "bottom-24 space-y-6")}>
                 <div className="flex flex-col items-center group/action cursor-pointer" onClick={() => setIsLiked(!isLiked)}>
-                    <Heart className={cn("w-7 h-7 transition-all", isLiked ? "fill-primary text-primary scale-110" : "text-white fill-none")} />
-                    <span className="text-white text-[10px] font-bold mt-1 shadow-sm">{likes}</span>
+                    <Heart className={cn("transition-all", isLiked ? "fill-primary text-primary scale-110" : "text-white fill-none", compact ? "w-4 h-4" : "w-7 h-7")} />
+                    <span className={cn("text-white font-bold shadow-sm", compact ? "text-[8px] mt-0.5" : "text-[10px] mt-1")}>{likes}</span>
                 </div>
 
                 <div className="flex flex-col items-center group/action cursor-pointer">
-                    <Eye className="text-white w-7 h-7 shadow-sm" />
-                    <span className="text-white text-[10px] font-bold mt-1 shadow-sm">{views}</span>
+                    <Eye className={cn("text-white shadow-sm", compact ? "w-4 h-4" : "w-7 h-7")} />
+                    <span className={cn("text-white font-bold shadow-sm", compact ? "text-[8px] mt-0.5" : "text-[10px] mt-1")}>{views}</span>
                 </div>
 
                 <div className="flex flex-col items-center group/action cursor-pointer">
-                    <Share2 className="text-white w-7 h-7 shadow-sm" />
-                    <span className="text-white text-[10px] font-bold mt-1 shadow-sm">{shares}</span>
+                    <Share2 className={cn("text-white shadow-sm", compact ? "w-4 h-4" : "w-7 h-7")} />
+                    <span className={cn("text-white font-bold shadow-sm", compact ? "text-[8px] mt-0.5" : "text-[10px] mt-1")}>{shares}</span>
                 </div>
             </div>
 
             {/* Bottom Product Overlay */}
-            <div className="absolute left-3 bottom-4 right-16 z-20 flex items-end space-x-3">
+            <div className={cn("absolute left-2 z-20 flex items-end", compact ? "bottom-2 right-10 space-x-1.5" : "bottom-4 right-16 space-x-3")}>
                 {/* Round Product Image */}
-                <div className="w-14 h-14 rounded-full border-2 border-primary bg-white flex-shrink-0 overflow-hidden relative shadow-lg">
+                <div className={cn("rounded-full border-2 border-primary bg-white flex-shrink-0 overflow-hidden relative shadow-lg", compact ? "w-7 h-7" : "w-14 h-14")}>
                     {thumbnailUrl ? (
                         <NextImage 
                             src={thumbnailUrl} 
@@ -239,18 +248,22 @@ const ReelCard = ({
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <span className="text-xs text-muted-foreground">{productName.charAt(0)}</span>
+                            <span className={cn("text-muted-foreground", compact ? "text-[8px]" : "text-xs")}>{productName.charAt(0)}</span>
                         </div>
                     )}
                 </div>
 
                 {/* Product Info */}
                 <div className="flex flex-col min-w-0">
-                    <h3 className="text-white text-xs lg:text-sm font-bold tracking-wide truncate shadow-sm mb-1">{productName}</h3>
-                    <div className="flex items-center space-x-2">
-                        <span className="text-primary font-bold text-sm lg:text-base drop-shadow-md">{price}</span>
-                        <span className="text-white/60 text-[10px] line-through decoration-white/40">{originalPrice}</span>
-                        <span className="text-green-400 text-[10px] font-bold uppercase tracking-widest">{discount} OFF</span>
+                    <h3 className={cn("text-white font-bold tracking-wide truncate shadow-sm", compact ? "text-[8px] mb-0" : "text-xs lg:text-sm mb-1")}>{productName}</h3>
+                    <div className={cn("flex items-center", compact ? "space-x-1" : "space-x-2")}>
+                        <span className={cn("text-primary font-bold drop-shadow-md", compact ? "text-[10px]" : "text-sm lg:text-base")}>{price}</span>
+                        {originalPrice && (
+                            <span className={cn("text-white/60 line-through decoration-white/40", compact ? "text-[7px]" : "text-[10px]")}>{originalPrice}</span>
+                        )}
+                        {discount && (
+                            <span className={cn("text-green-400 font-bold uppercase tracking-wider", compact ? "text-[6px]" : "text-[10px]")}>{discount} OFF</span>
+                        )}
                     </div>
                 </div>
             </div>

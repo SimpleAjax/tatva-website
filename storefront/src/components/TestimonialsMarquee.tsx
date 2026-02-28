@@ -131,7 +131,7 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 
 export default function TestimonialsMarquee() {
   return (
-    <section className="py-20 bg-gradient-to-b from-rose-50/50 via-white to-rose-50/30 overflow-hidden">
+    <section className="py-10 bg-gradient-to-b from-rose-50/50 via-white to-rose-50/30 overflow-hidden">
       <div className="container mx-auto px-4 mb-12">
         <div className="text-center space-y-4">
           <span className="text-primary text-[10px] lg:text-[11px] font-bold tracking-[0.4em] uppercase">
@@ -173,7 +173,7 @@ export default function TestimonialsMarquee() {
       </div>
 
       {/* Trust Badges */}
-      <div className="container mx-auto px-4 mt-16">
+      <div className="container mx-auto px-4 mt-8">
         <div className="flex flex-wrap justify-center items-center gap-8 text-zinc-400">
           <div className="flex items-center gap-2">
             <Star className="w-5 h-5 text-amber-400 fill-amber-400" />

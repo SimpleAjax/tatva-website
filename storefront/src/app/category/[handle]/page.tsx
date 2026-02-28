@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getCategories, getProducts } from "@/lib/medusa";
+import { getDefaultRegionId } from "@/lib/regions";
 import ProductCard from "@/components/ProductCard";
 
 interface CategoryPageProps {
@@ -39,6 +40,9 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { handle } = await params;
   
+  // Get default region for pricing
+  const regionId = await getDefaultRegionId();
+  
   // Fetch category and products
   const { product_categories } = await getCategories();
   const category = product_categories.find((cat) => cat.handle === handle);
@@ -49,7 +53,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   
   const { products } = await getProducts({ 
     category_id: category.id,
-    limit: 100 
+    limit: 100,
+    region_id: regionId
   });
   
   // Category display names and descriptions

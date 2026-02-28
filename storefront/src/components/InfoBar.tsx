@@ -12,7 +12,7 @@ const InfoBar = () => {
     ];
 
     return (
-        <div className="w-full bg-primary text-primary-foreground py-6">
+        <div className="w-full bg-primary text-primary-foreground py-3">
             <div className="container mx-auto px-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     {features.map((f, i) => (

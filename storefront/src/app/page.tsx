@@ -144,7 +144,7 @@ export default async function Home() {
         <InfoBar />
 
         {/* 1. New Arrivals Section */}
-        <section className="py-16 container mx-auto px-4">
+        <section className="py-8 container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
               <span className="text-primary text-[10px] font-bold tracking-[0.2em] uppercase">Just In</span>
@@ -169,7 +169,7 @@ export default async function Home() {
         <BestSellersReels reels={bestSellersData} />
 
         {/* 2. The Wedding Edit */}
-        <section className="py-20 bg-[#FDF8F8]">
+        <section className="py-10 bg-[#FDF8F8]">
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row gap-12">
               {/* Banner */}
@@ -205,7 +205,7 @@ export default async function Home() {
         <Collections />
 
         {/* 3. Gifts for Her (Horizontal Scroll) */}
-        <section className="py-16 container mx-auto px-4 overflow-hidden">
+        <section className="py-8 container mx-auto px-4 overflow-hidden">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-serif text-primary italic">Gifts for Her</h2>
             <p className="text-muted-foreground text-xs uppercase tracking-widest mt-2">Curated sets for every occasion</p>
@@ -226,7 +226,7 @@ export default async function Home() {
         </section>
 
         {/* Shop the Look Section */}
-        <section className="py-24 bg-[#FFEFEF]/30">
+        <section className="py-12 bg-[#FFEFEF]/30">
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row items-center gap-16">
               <div className="w-full lg:w-1/2 relative group">
@@ -262,7 +262,7 @@ export default async function Home() {
         </section>
 
         {/* 4. Pocket Friendly Section */}
-        <section className="py-16 container mx-auto px-4">
+        <section className="py-8 container mx-auto px-4">
           <div className="flex flex-col items-center mb-10 space-y-2">
             <span className="bg-primary text-white px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full">Steal Deals</span>
             <h2 className="text-3xl font-serif text-primary italic">Under ₹999</h2>

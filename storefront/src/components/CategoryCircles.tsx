@@ -18,7 +18,7 @@ const categories = [
 
 const CategoryCircles = () => {
     return (
-        <div className="w-full py-8 lg:py-12 bg-[#FEF9F9]">
+        <div className="w-full py-4 lg:py-6 bg-[#FEF9F9]">
             <div className="container mx-auto px-4 overflow-x-auto no-scrollbar">
                 <div className="flex items-center justify-start lg:justify-center space-x-6 lg:space-x-12 min-w-max">
                     {categories.map((cat) => (

@@ -13,7 +13,7 @@ const collections = [
 
 const Collections = () => {
     return (
-        <section className="py-24 container mx-auto px-4">
+        <section className="py-10 container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
                 <div className="space-y-4">
                     <span className="text-primary text-[10px] lg:text-[11px] font-bold tracking-[0.4em] uppercase">Categories</span>

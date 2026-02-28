@@ -64,7 +64,7 @@ export default function BestSellersReels({ reels }: BestSellersReelsProps) {
   }, [reels]);
 
   return (
-    <section className="py-16 lg:py-24 bg-zinc-50 overflow-hidden">
+    <section className="py-8 lg:py-10 bg-zinc-50 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <span className="text-primary text-[10px] lg:text-[11px] font-bold tracking-[0.4em] uppercase">
@@ -82,17 +82,22 @@ export default function BestSellersReels({ reels }: BestSellersReelsProps) {
           </div>
         )}
 
-        {/* Reels Grid */}
+        {/* Reels Horizontal Scroll - Smaller size, ~7 visible */}
         <div className={cn(
-          "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto",
+          "flex overflow-x-auto gap-3 pb-4 no-scrollbar snap-x snap-mandatory",
           isLoading ? "opacity-0" : "opacity-100 transition-opacity duration-500"
         )}>
           {reels.map((reel, i) => (
-            <ReelCard 
+            <div 
               key={i} 
-              {...reel} 
-              priority={i < 2} // Priority load first 2 videos
-            />
+              className="flex-shrink-0 w-[140px] sm:w-[160px] lg:w-[180px] snap-start"
+            >
+              <ReelCard 
+                {...reel} 
+                compact // Pass compact prop for smaller styling
+                priority={i < 2} // Priority load first 2 videos
+              />
+            </div>
           ))}
         </div>
 
