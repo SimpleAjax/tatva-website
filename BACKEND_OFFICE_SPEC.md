@@ -5,7 +5,8 @@
 > **Version**: 1.0  
 > **Date**: March 2026  
 > **Platform**: Medusa.js v2 + Next.js  
-> **Target**: Jewelry E-Commerce Operations
+> **Current Focus**: Anti-Tarnish Jewelry (Rings, Necklaces, Earrings, Bracelets)  
+> **Future Ready**: Extensible to Watches, Purses, Accessories & More
 
 ---
 
@@ -29,7 +30,7 @@
 
 ### 1.1 Purpose
 
-This document defines the complete technical specification for Tatva's backend office management system — a suite of custom Medusa modules designed specifically for jewelry e-commerce operations. The system bridges the gap between generic e-commerce platforms and the unique requirements of jewelry inventory management.
+This document defines the complete technical specification for Tatva's backend office management system — a suite of custom Medusa modules designed specifically for **anti-tarnish jewelry** operations, with an extensible architecture ready to support future product categories like watches, purses, and accessories. The system bridges the gap between generic e-commerce platforms and the unique requirements of jewelry inventory management.
 
 ### 1.2 Key Differentiators
 
@@ -38,6 +39,13 @@ This document defines the complete technical specification for Tatva's backend o
 │              TATVA BACKEND OFFICE CAPABILITIES                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
+│  CURRENT FOCUS: Anti-Tarnish Jewelry                            │
+│  • Rings • Necklaces • Earrings • Bracelets • Anklets           │
+│                                                                  │
+│  FUTURE READY: Extensible Category System                       │
+│  • Watches • Purses • Handbags • Accessories • [Add More]       │
+│                                                                  │
+├─────────────────────────────────────────────────────────────────┤
 │  🔴 INBOUND FLOW (We Buy)     🟢 OUTBOUND FLOW (We Sell)        │
 │  ════════════════════════     ═════════════════════════         │
 │                                                                  │
@@ -57,6 +65,7 @@ This document defines the complete technical specification for Tatva's backend o
 │  🟢 WHAT happened when we sold it (delivery, review, return)    │
 │  💰 HOW much profit we made (true net margin)                   │
 │  📦 WHEN to reorder (based on velocity and lead times)          │
+│  ✨ TARNISH RESISTANCE quality tracking (anti-tarnish focus)    │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -66,11 +75,13 @@ This document defines the complete technical specification for Tatva's backend o
 | Module | Direction | Purpose | Key Value |
 |--------|-----------|---------|-----------|
 | **Wholesaler Management** | 🔴 INBOUND | Manage suppliers who sell TO us | Make data-driven supplier decisions |
-| **SKU Management** | 📦 BOTH | Standardized numbering for all inventory | Eliminate inventory chaos |
+| **SKU Management** | 📦 BOTH | Standardized numbering — **Jewelry now, extensible to Watches/Purses** | Eliminate inventory chaos |
 | **P&L Tracking** | 🟢 OUTBOUND | True cost and profit when we sell | Know actual margins, not guesswork |
-| **Catalog Generator** | 🟢 OUTBOUND | Beautiful catalogs to sell TO customers | Sales enablement |
+| **Catalog Generator** | 🟢 OUTBOUND | Beautiful catalogs — **Multi-category ready** | Sales enablement |
 | **Product Lifecycle** | 🟢 OUTBOUND | Track products we ship TO customers | Complete post-sale visibility |
-| **Admin Dashboard** | 📦 BOTH | Unified operational view for both flows | Single source of truth |
+| **Admin Dashboard** | 📦 BOTH | Unified view — **Current: Jewelry, Future: Multi-category** | Single source of truth |
+
+> **✨ Anti-Tarnish Focus**: All jewelry-specific features (material tracking, quality inspection, tarnish resistance ratings) are designed for anti-tarnish products first, with easy extension to other categories.
 
 ### Inbound vs Outbound - What This Means
 
@@ -650,28 +661,53 @@ SKU Management brings order to inventory chaos. It defines a standardized number
 
 #### 4.2.1 Standard Format
 
+> **Current Categories**: Anti-Tarnish Jewelry  
+> **Future Ready**: Watches, Purses, Accessories (add new codes as needed)
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    SKU FORMAT: XXX-NNNN-CCC-SSS                      │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│  XXX   = Category Code (3 letters)                                  │
-│          RNG = Rings                                                │
-│          NCK = Necklaces                                            │
-│          EAR = Earrings                                             │
-│          BRA = Bracelets                                            │
-│          ANK = Anklets                                              │
-│          BRD = Bridal Sets                                          │
+│  XXX   = Category Code (3 letters) — EXTENSIBLE                     │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  CURRENT: Anti-Tarnish Jewelry (Primary Focus)                │  │
+│  │  • RNG = Rings                                               │  │
+│  │  • NCK = Necklaces                                           │  │
+│  │  • EAR = Earrings                                            │  │
+│  │  • BRA = Bracelets                                           │  │
+│  │  • ANK = Anklets                                             │  │
+│  │  • BRD = Bridal Sets                                         │  │
+│  ├───────────────────────────────────────────────────────────────┤  │
+│  │  FUTURE: Easy to Add                                         │  │
+│  │  • WTC = Watches                                             │  │
+│  │  • PUR = Purses                                              │  │
+│  │  • HBG = Handbags                                            │  │
+│  │  • BEL = Belts                                               │  │
+│  │  • SCA = Scarves                                             │  │
+│  │  • [Your new category]                                       │  │
+│  └───────────────────────────────────────────────────────────────┘  │
 │                                                                      │
 │  NNNN  = Sequence Number (4 digits, auto-increment)                 │
 │          0001, 0002, 0003...                                        │
 │                                                                      │
-│  CCC   = Material Code (3 letters)                                  │
-│          GLD = Gold (any karat)                                     │
-│          SLV = Silver                                               │
-│          OXD = Oxidized Silver                                      │
-│          ROS = Rose Gold                                            │
-│          IMN = Imitation/Artificial                                 │
+│  CCC   = Material Code (3 letters) — Category-specific              │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  JEWELRY MATERIALS (Current)                                  │  │
+│  │  • ATG = Anti-Tarnish Gold                                    │  │
+│  │  • ATS = Anti-Tarnish Silver                                  │  │
+│  │  • ATR = Anti-Tarnish Rose Gold                               │  │
+│  │  • OXD = Oxidized (Decorative)                                │  │
+│  │  • GLD = Pure Gold                                            │  │
+│  │  • SLV = Pure Silver                                          │  │
+│  ├───────────────────────────────────────────────────────────────┤  │
+│  │  FUTURE MATERIALS (Examples)                                  │  │
+│  │  • LTR = Leather (for Purses/Watches)                         │  │
+│  │  • FAB = Fabric (for Scarves)                                 │  │
+│  │  • MTL = Metal (for Watches)                                  │  │
+│  └───────────────────────────────────────────────────────────────┘  │
 │                                                                      │
 │  SSS   = Size/Variant Code (optional, 2-3 chars)                    │
 │          S/M/L for sizes                                            │
@@ -681,26 +717,56 @@ SKU Management brings order to inventory chaos. It defines a standardized number
 └─────────────────────────────────────────────────────────────────────┘
 
 EXAMPLES:
-RNG-0042-GLD-08    = Ring #42, Gold, Size 8
-NCK-0103-SLV-18    = Necklace #103, Silver, 18 inch
+RNG-0042-ATG-08    = Ring #42, Anti-Tarnish Gold, Size 8
+NCK-0103-ATS-18    = Necklace #103, Anti-Tarnish Silver, 18 inch
 EAR-0234-OXD       = Earring #234, Oxidized (no size)
-BRD-0005-GLD       = Bridal Set #5, Gold
+BRD-0005-ATR       = Bridal Set #5, Anti-Tarnish Rose Gold
+
+FUTURE EXAMPLES:
+WTC-0001-MTL-42    = Watch #1, Metal, 42mm face
+PUR-0050-LTR-BLK   = Purse #50, Leather, Black
 ```
 
 #### 4.2.2 Auto-Generation Rules
 
 ```typescript
 interface SkuGenerationRules {
-  // Category codes (extensible)
-  category_codes: Record<string, string>;
+  // Category codes — EXTENSIBLE for future categories
+  // Current: Anti-tarnish jewelry | Future: Watches, Purses, etc.
+  category_codes: {
+    // Jewelry (Current Focus)
+    RNG: 'Rings',
+    NCK: 'Necklaces',
+    EAR: 'Earrings',
+    BRA: 'Bracelets',
+    ANK: 'Anklets',
+    BRD: 'Bridal Sets',
+    
+    // Future Categories (Easy to add)
+    // WTC: 'Watches',
+    // PUR: 'Purses',
+    // HBG: 'Handbags',
+    // BEL: 'Belts',
+    // SCA: 'Scarves',
+  };
   
-  // Material detection keywords
+  // Material detection keywords — Category-specific
   material_keywords: {
+    // Anti-Tarnish Jewelry (Current)
+    anti_tarnish_gold: ['anti-tarnish gold', 'atg', 'tarnish-free gold'],
+    anti_tarnish_silver: ['anti-tarnish silver', 'ats', 'tarnish-free silver'],
+    anti_tarnish_rose: ['anti-tarnish rose gold', 'atr'],
+    oxidized: ['oxidized', 'black silver', 'tribal', 'vintage oxidized'],
+    
+    // Traditional metals
     gold: ['gold', '18k', '22k', '916', 'hallmark gold'],
     silver: ['silver', '925', 'sterling'],
-    oxidized: ['oxidized', 'black silver', 'tribal'],
     rose_gold: ['rose gold', 'pink gold'],
-    imitation: ['imitation', 'artificial', 'fashion', 'alloy'],
+    
+    // Future materials (examples)
+    // leather: ['leather', 'genuine leather', 'faux leather'],
+    // fabric: ['cotton', 'silk', 'wool', 'linen'],
+    // metal_watch: ['stainless steel', 'alloy'],
   };
   
   // Sequence management
@@ -925,6 +991,8 @@ Upload File
 
 #### 4.5.1 Complete Attribute Schema
 
+> **Extensible Design**: Current attributes support Anti-Tarnish Jewelry. Category-specific attributes can be added for Watches, Purses, etc.
+
 ```typescript
 interface SkuAttributes {
   // === BASIC INFO ===
@@ -932,23 +1000,36 @@ interface SkuAttributes {
   product_name: string;
   description: string;
   
-  // === CATEGORIZATION ===
+  // === CATEGORIZATION (EXTENSIBLE) ===
   category: {
-    primary: string;            // "rings"
-    subcategory?: string;       // "engagement"
-    collection?: string;        // "wedding-edit"
-    tags: string[];             // ["bridal", "traditional", "gold"]
+    primary: string;            // "rings" | "watches" | "purses"
+    subcategory?: string;       // "engagement" | "analog" | "clutch"
+    collection?: string;        // "wedding-edit" | "sport" | "evening"
+    product_type: 'jewelry' | 'watch' | 'purse' | 'accessory' | string;
+    tags: string[];             // ["bridal", "anti-tarnish"]
   };
   
-  // === MATERIAL ===
+  // === MATERIAL (Category-Specific) ===
   material: {
-    primary: string;            // "gold", "silver", "alloy"
+    // Current: Anti-Tarnish Jewelry
+    primary: string;            // "anti-tarnish-gold", "anti-tarnish-silver"
     purity?: string;            // "22k", "925", "18k"
-    plating?: string;           // "gold-plated", "rhodium"
+    plating?: string;           // "rhodium", "gold-plated"
     finish: 'polished' | 'matte' | 'brushed' | 'hammered';
+    
+    // Anti-Tarnish Specific
+    tarnish_resistance: {
+      is_anti_tarnish: boolean;           // true for current focus
+      coating_type?: string;               // "e-coating", "lacquer", "rhodium"
+      warranty_months?: number;            // e.g., 6 months, 1 year
+      care_instructions: string;          // Special care for anti-tarnish
+    };
+    
+    // Future: Watches could add: case_material, strap_material
+    // Future: Purses could add: exterior_material, interior_material
   };
   
-  // === STONES ===
+  // === STONES (Jewelry-Specific, Optional for other categories) ===
   stones: {
     has_stones: boolean;
     stone_type?: string;        // "diamond", "ruby", "pearl", "kundan"
@@ -960,8 +1041,9 @@ interface SkuAttributes {
     certification?: string;     // GIA, IGI, etc.
   };
   
-  // === DIMENSIONS ===
+  // === DIMENSIONS (Category-Specific) ===
   dimensions: {
+    // Jewelry measurements
     weight_grams: number;
     length_mm?: number;
     width_mm?: number;
@@ -969,24 +1051,58 @@ interface SkuAttributes {
     ring_size?: number;         // US size 5-12
     necklace_length?: number;   // inches
     adjustable: boolean;
+    
+    // Future: Watches could add: case_diameter_mm, strap_width_mm
+    // Future: Purses could add: length_cm, width_cm, depth_cm, strap_drop_cm
+  };
+  
+  // === CATEGORY-SPECIFIC ATTRIBUTES (Extensible) ===
+  category_specific?: {
+    // For Jewelry (Current)
+    jewelry?: {
+      style: 'traditional' | 'contemporary' | 'fusion' | 'minimal';
+      occasion: 'daily-wear' | 'party' | 'wedding' | 'festive';
+      closure_type?: string;    // "hook", "clasp", "stud"
+    };
+    
+    // For Future Watches
+    // watch?: {
+    //   movement: 'quartz' | 'automatic' | 'mechanical';
+    //   water_resistance: string;
+    //   dial_color: string;
+    // };
+    
+    // For Future Purses
+    // purse?: {
+    //   style: 'tote' | 'clutch' | 'crossbody';
+    //   compartments: number;
+    //   closure: 'zipper' | 'magnet' | 'clasp';
+    // };
   };
   
   // === VARIANTS ===
   variants: {
     has_variants: boolean;
     variant_options: {
-      name: string;             // "Size", "Color"
+      name: string;             // "Size", "Color", "Material"
       values: string[];         // ["S", "M", "L"]
     }[];
     sku_suffix_pattern: string; // "-SIZE-COLOR"
   };
   
   // === CARE & ORIGIN ===
-  care_instructions: string;
+  care_instructions: string;      // Anti-tarnish care tips
   country_of_origin: string;
   is_handmade: boolean;
   is_hallmarked: boolean;
   hallmark_details?: string;
+  
+  // Quality & Authenticity
+  quality_certification?: {
+    has_certificate: boolean;
+    certificate_type?: string;   // "BIS", "IGI", etc.
+    certificate_number?: string;
+  };
   
   // === SOURCE ===
   source: {
@@ -1086,6 +1202,8 @@ const DUPLICATE_SCENARIOS = {
 | **Price Suggestions** | AI-suggested pricing based on similar items | Optimal pricing |
 | **Virtual Try-On Prep** | Generate 3D models from 2D images | Enhanced shopping |
 | **Barcode/QR Generator** | Print labels with SKU QR codes | Faster warehouse ops |
+| **🆕 Category Expansion Module** | Add Watches, Purses, Accessories seamlessly | Business growth ready |
+| **🆕 Category-Specific Inspection** | Custom quality checks per product type | Watches: water resistance, Purses: stitching |
 
 ---
 
@@ -2509,12 +2627,17 @@ interface ReturnAnalytics {
 
 ### 7.6 Quality Inspection Workflow
 
+> **Category-Specific Inspection**: Current checklist is for Anti-Tarnish Jewelry. Different checklists for Watches, Purses, etc. can be configured.
+
 #### 7.6.1 Inspection Checklist
 
 ```typescript
 interface QualityInspection {
   id: string;
   return_id: string;
+  
+  // Product category determines checklist
+  category: 'jewelry' | 'watch' | 'purse' | 'accessory';
   
   // Inspector
   inspected_by: string;
@@ -2524,24 +2647,11 @@ interface QualityInspection {
   condition: {
     overall: 'new' | 'like_new' | 'lightly_used' | 'damaged' | 'defective';
     
-    // Jewelry-specific checks
-    checks: {
-      packaging_intact: boolean;
-      tags_attached: boolean;
-      no_scratches: boolean;
-      stones_intact: boolean;
-      clasp_working: boolean;
-      no_tarnish: boolean;
-      original_finish: boolean;
-    };
+    // Category-specific checks (selected based on product type)
+    checks: InspectionChecks;
     
     // Damage details (if any)
-    damage_details?: {
-      type: string;                  // "stone_missing", "scratch", "broken_clasp"
-      severity: 'minor' | 'moderate' | 'severe';
-      description: string;
-      photos: string[];
-    }[];
+    damage_details?: DamageDetail[];
   };
   
   // Disposition
@@ -2555,8 +2665,43 @@ interface QualityInspection {
   notes?: string;
 }
 
-// Inspection form UI
-const INSPECTION_CHECKLIST = {
+// Category-specific inspection checks
+interface InspectionChecks {
+  // === ANTI-TARNISH JEWELRY (Current Focus) ===
+  jewelry?: {
+    packaging_intact: boolean;
+    tags_attached: boolean;
+    no_scratches: boolean;
+    stones_intact: boolean;
+    clasp_working: boolean;
+    no_tarnish: boolean;              // Critical for anti-tarnish
+    original_finish: boolean;
+    anti_tarnish_coating_intact: boolean;  // Specific to anti-tarnish
+  };
+  
+  // === FUTURE: WATCHES ===
+  // watch?: {
+  //   packaging_intact: boolean;
+  //   watch_working: boolean;
+  //   no_scratches_on_face: boolean;
+  //   strap_intact: boolean;
+  //   water_resistance_seal: boolean;
+  //   battery_working?: boolean;
+  // };
+  
+  // === FUTURE: PURSES ===
+  // purse?: {
+  //   packaging_intact: boolean;
+  //   no_stains: boolean;
+  //   stitching_intact: boolean;
+  //   zippers_working: boolean;
+  //   hardware_not_tarnished: boolean;
+  //   shape_retained: boolean;
+  // };
+}
+
+// Inspection form UI - Category-specific checklists
+const INSPECTION_CHECKLISTS = {
   PACKAGING: [
     'Original box present',
     'Jewelry pouch present',
@@ -3426,13 +3571,14 @@ ADMIN API (Protected)
 | Task | Priority | Effort |
 |------|----------|--------|
 | Wholesaler CRUD + ratings | High | 3 days |
-| SKU numbering system | High | 2 days |
+| SKU numbering system (Anti-Tarnish focus) | High | 2 days |
 | SKU-Wholesaler linkage | High | 2 days |
 | Bulk upload functionality | Medium | 3 days |
 | Image-based ingest (basic) | Medium | 3 days |
 | SKU deduplication | Medium | 2 days |
+| Anti-tarnish attribute tracking | High | 2 days |
 | Admin UI for both modules | High | 4 days |
-| **Milestone**: Can onboard suppliers & products | | |
+| **Milestone**: Can onboard anti-tarnish suppliers & products | | |
 
 ### 9.3 Phase 3: P&L Tracking (Weeks 6-7)
 
@@ -3486,7 +3632,7 @@ ADMIN API (Protected)
 | Performance optimization | Medium | 3 days |
 | **Milestone**: Complete operational dashboard | | |
 
-### 10.7 Phase 7: Advanced Features (Week 15+)
+### 10.7 Phase 7: Advanced Features & Category Expansion (Week 15+)
 
 | Task | Priority | Effort |
 |------|----------|--------|
@@ -3495,7 +3641,10 @@ ADMIN API (Protected)
 | Mobile app | Low | 10 days |
 | Supplier portal | Low | 5 days |
 | Predictive delivery ML | Low | 5 days |
-| **Milestone**: Premium features ready | | |
+| **🆕 Category Expansion: Watches** | Future | 10 days |
+| **🆕 Category Expansion: Purses/Handbags** | Future | 10 days |
+| **🆕 Category-specific inspection modules** | Future | 5 days |
+| **Milestone**: Premium features ready, Multi-category capable | | |
 
 ---
 
@@ -3537,6 +3686,7 @@ interface Wholesaler {
 // ============================================
 // SKU (Our extension to Medusa ProductVariant)
 // ============================================
+// EXTENSIBLE: Works for Jewelry (current), Watches, Purses (future)
 interface SkuExtension {
   id: string;
   variant_id: string;           // Links to Medusa
@@ -3544,10 +3694,33 @@ interface SkuExtension {
   // Our custom SKU (may differ from Medusa's)
   tatva_sku: string;
   
-  // Attributes
-  material: MaterialAttributes;
-  stones?: StoneAttributes;
-  dimensions: DimensionAttributes;
+  // Category classification
+  category: {
+    code: string;               // "RNG", "WTC", "PUR"
+    name: string;               // "Rings", "Watches", "Purses"
+    product_type: 'jewelry' | 'watch' | 'purse' | 'accessory' | string;
+  };
+  
+  // Attributes (category-specific structure)
+  attributes: {
+    // Current: Anti-Tarnish Jewelry
+    material?: MaterialAttributes;
+    stones?: StoneAttributes;
+    dimensions?: DimensionAttributes;
+    anti_tarnish_properties?: {
+      is_anti_tarnish: boolean;
+      coating_type?: string;
+      warranty_months?: number;
+    };
+    
+    // Future: Watches could include
+    // watch_movement?: 'quartz' | 'automatic';
+    // water_resistance?: string;
+    
+    // Future: Purses could include
+    // bag_style?: 'tote' | 'clutch';
+    // compartment_count?: number;
+  };
   
   // Source
   primary_wholesaler_id: string;
@@ -3744,27 +3917,49 @@ interface Catalog {
 
 ## Summary
 
-This specification outlines a comprehensive backend office management system for Tatva that manages both **inbound** (supplier → Tatva) and **outbound** (Tatva → customer) business flows:
+This specification outlines a comprehensive backend office management system for Tatva, currently focused on **Anti-Tarnish Jewelry** (Rings, Necklaces, Earrings, Bracelets, Anklets), with an extensible architecture ready for future categories like **Watches, Purses, Handbags, and Accessories**.
 
-### 🔴 Inbound (Supplier → Tatva) — We BUY Inventory
+### 🔴 Inbound (Supplier → Tatva) — We BUY Anti-Tarnish Jewelry
 1. **Tracks every supplier relationship** with quality metrics and performance history
-2. **Manages purchase orders** we place with wholesalers
+2. **Manages purchase orders** we place with anti-tarnish jewelry wholesalers
 3. **Records buy costs** and lead times for accurate costing
+4. **Quality checks** specifically for anti-tarnish properties and coating
 
-### 🟢 Outbound (Tatva → Customer) — We SELL Products  
-4. **Showcases products** with beautiful, shareable catalogs
-5. **Reveals true profitability** at the individual SKU level when we sell
-6. **Traces complete product lifecycle** from our shipment to customer delivery, reviews, and returns
+### 🟢 Outbound (Tatva → Customer) — We SELL Anti-Tarnish Jewelry  
+5. **Showcases products** with beautiful, shareable catalogs highlighting anti-tarnish benefits
+6. **Reveals true profitability** at the individual SKU level when we sell
+7. **Traces complete product lifecycle** from shipment to delivery, reviews, and returns
 
-### 📦 Both Flows
-7. **Brings order to inventory** with intelligent SKU numbering (tracks both incoming and outgoing)
-8. **Unifies operations** in a single dashboard with actionable insights across both flows
+### 📦 Both Flows + Future Ready
+8. **Brings order to inventory** with intelligent SKU numbering (extensible to Watches: WTC-, Purses: PUR-)
+9. **Unifies operations** in a single dashboard with actionable insights
+10. **Category-extensible** — Add Watches, Purses later without system redesign
+
+### ✨ Anti-Tarnish Specific Features
+- Tarnish resistance tracking in SKU attributes
+- Anti-tarnish coating quality checks in returns
+- Category-specific inspection checklists
+- Warranty tracking for anti-tarnish guarantee
+
+### 🚀 Future Expansion Ready
+- SKU format supports new categories (WTC-, PUR-, HBG-)
+- Category-specific attributes structure
+- Configurable quality inspection per product type
+- Material codes ready for leather, fabric, etc.
 
 The architecture is built on Medusa.js v2 modules, ensuring tight integration with your existing e-commerce platform while adding jewelry-specific capabilities that generic platforms cannot provide.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    COMPLETE FLOW COVERAGE                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  CURRENT: Anti-Tarnish Jewelry      FUTURE: Multi-Category      │
+│  • Rings (RNG-)                     • Watches (WTC-)            │
+│  • Necklaces (NCK-)                 • Purses (PUR-)             │
+│  • Earrings (EAR-)                  • Handbags (HBG-)           │
+│  • Bracelets (BRA-)                 • Accessories (ACC-)        │
+│                                                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  🔴 INBOUND                          🟢 OUTBOUND                 │
@@ -3778,7 +3973,7 @@ The architecture is built on Medusa.js v2 modules, ensuring tight integration wi
 │                                                                  │
 │  • Who we buy from              • Who we sell to                │
 │  • At what cost                 • At what price                 │
-│  • Quality ratings              • Delivery tracking             │
+│  • Tarnish resistance ratings   • Delivery tracking             │
 │  • Lead times                   • Reviews & returns             │
 │                                                                  │
 │  PROFIT = Selling Price (OUTBOUND) - Buy Cost (INBOUND) - Costs │
