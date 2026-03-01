@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { getProducts, Product } from "@/lib/medusa";
+import { getProducts, getRegions, Product } from "@/lib/medusa";
 import ProductCard from "@/components/ProductCard";
 
 function SearchContent() {
@@ -16,7 +16,18 @@ function SearchContent() {
     if (query) {
       setLoading(true);
       setSearched(true);
-      getProducts({ q: query, limit: 50 })
+      
+      // Fetch region first for pricing, then search
+      getRegions()
+        .then(({ regions }) => {
+          const indiaRegion = regions.find(r => 
+            r.currency_code === 'inr' || 
+            r.name.toLowerCase().includes('india')
+          );
+          const regionId = indiaRegion?.id || regions[0]?.id;
+          
+          return getProducts({ q: query, limit: 50, region_id: regionId });
+        })
         .then(({ products }) => {
           setProducts(products);
         })

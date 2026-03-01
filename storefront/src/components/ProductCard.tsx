@@ -10,14 +10,16 @@ import { Product, formatPrice, getVariantPrice, addToWishlist, removeFromWishlis
 import { useCart } from "@/context/CartContext";
 import { cn } from "@/lib/utils";
 
+import type { HTMLAttributes } from "react";
+
 // Props for Medusa product
-interface MedusaProductCardProps {
+interface MedusaProductCardProps extends HTMLAttributes<HTMLDivElement> {
   product: Product;
   className?: string;
 }
 
 // Props for legacy/mock product data
-interface LegacyProductCardProps {
+interface LegacyProductCardProps extends HTMLAttributes<HTMLDivElement> {
   name: string;
   price: string;
   originalPrice?: string;
@@ -43,7 +45,7 @@ const ProductCard = (props: ProductCardProps) => {
 
   // Handle Medusa product
   if (isMedusaProduct(props)) {
-    const { product, className } = props;
+    const { product, className, ...rest } = props;
     const [imageError, setImageError] = useState(false);
 
     // Check wishlist status on mount
@@ -87,7 +89,7 @@ const ProductCard = (props: ProductCardProps) => {
     if (!product.variants || product.variants.length === 0) {
       return (
         <div className={cn("group flex flex-col space-y-3 opacity-50", className)}>
-          <div className="relative aspect-[3/4] bg-[#F5F5F5] overflow-hidden">
+          <div className="relative aspect-[3/4] bg-background-cream overflow-hidden">
             <div className="w-full h-full flex items-center justify-center italic text-muted-foreground/50 text-xs">
               No variants
             </div>
@@ -141,32 +143,34 @@ const ProductCard = (props: ProductCardProps) => {
     };
 
     return (
-      <div className={cn("group flex flex-col space-y-3", className)}>
+      <div className={cn("group flex flex-col", className)} {...rest}>
         {/* Image Container */}
-        <Link href={productUrl} className="relative aspect-[3/4] bg-[#F5F5F5] overflow-hidden block">
+        <Link href={productUrl} className="relative aspect-[3/4] bg-background-cream overflow-hidden block">
           {/* Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-2 z-10">
+          <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
             {discount && (
-              <Badge className="bg-primary text-white border-none rounded-none px-2 py-0.5 text-[10px] uppercase font-bold">
-                {discount}% OFF
+              <Badge className="bg-primary text-white border-none rounded-none px-2 py-1 text-[10px] uppercase font-bold shadow-sm">
+                {discount}% Off
               </Badge>
             )}
             {product.tags?.some(tag => tag.value.toLowerCase() === "new") && (
-              <Badge className="bg-black text-white border-none rounded-none px-2 py-0.5 text-[10px] uppercase font-bold">
+              <Badge className="bg-foreground text-white border-none rounded-none px-2 py-1 text-[10px] uppercase font-bold shadow-sm">
                 New
               </Badge>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="absolute top-2 right-2 flex flex-col gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="absolute top-3 right-3 flex flex-col gap-2 z-10 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
             <button 
               onClick={handleWishlistToggle}
               disabled={wishlistLoading}
               className={cn(
-                "w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm transition-colors disabled:opacity-50",
+                "w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-200",
+                "hover:scale-110 active:scale-95 disabled:opacity-50",
                 isWishlisted ? "text-red-500" : "text-foreground hover:text-primary"
               )}
+              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             >
               {wishlistLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -182,8 +186,8 @@ const ProductCard = (props: ProductCardProps) => {
               src={product.thumbnail}
               alt={product.title}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               onError={() => setImageError(true)}
             />
           ) : (
@@ -196,17 +200,17 @@ const ProductCard = (props: ProductCardProps) => {
 
           {/* Quick Add Button */}
           <div 
-            className="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+            className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"
             onClick={(e) => e.preventDefault()}
           >
             <Button 
               onClick={handleAddToCart}
               disabled={isAdding || cartLoading || !cheapestVariant}
               className={cn(
-                "w-full rounded-none py-6 text-[10px] tracking-[0.2em] uppercase font-bold transition-colors",
+                "w-full rounded-none py-6 text-[11px] tracking-[0.15em] uppercase font-bold transition-colors",
                 isAdded 
                   ? "bg-green-600 hover:bg-green-600 text-white" 
-                  : "bg-primary hover:bg-primary/90 text-white"
+                  : "bg-primary hover:bg-primary-dark text-white"
               )}
             >
               {isAdding ? (
@@ -222,21 +226,21 @@ const ProductCard = (props: ProductCardProps) => {
         </Link>
 
         {/* Product Info */}
-        <Link href={productUrl} className="flex flex-col space-y-1 text-center lg:text-left">
+        <Link href={productUrl} className="flex flex-col space-y-1.5 pt-4">
           {product.collection && (
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
               {product.collection.title}
             </span>
           )}
-          <h3 className="text-xs font-bold tracking-widest uppercase text-foreground line-clamp-1">
+          <h3 className="text-xs font-semibold tracking-wide uppercase text-foreground line-clamp-1 group-hover:text-primary transition-colors">
             {product.title}
           </h3>
-          <div className="flex items-center justify-center lg:justify-start space-x-2">
-            <span className="text-sm font-bold text-primary">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-primary">
               {price ? formatPrice(price) : "Price unavailable"}
             </span>
             {originalPrice && originalPrice !== price && (
-              <span className="text-xs text-muted-foreground line-through decoration-muted-foreground/50">
+              <span className="text-xs text-muted-foreground line-through">
                 {formatPrice(originalPrice)}
               </span>
             )}
@@ -247,7 +251,7 @@ const ProductCard = (props: ProductCardProps) => {
   }
 
   // Handle legacy/mock product
-  const { name, price, originalPrice, discount, isNew, image, handle } = props as LegacyProductCardProps;
+  const { name, price, originalPrice, discount, isNew, image, handle, className, ...rest } = props as LegacyProductCardProps;
   const [legacyImageError, setLegacyImageError] = useState(false);
   
   // Generate product URL from handle or name
@@ -256,30 +260,31 @@ const ProductCard = (props: ProductCardProps) => {
     : `/product/${name.toLowerCase().replace(/\s+/g, "-")}`;
 
   return (
-    <div className="group flex flex-col space-y-3">
-      <Link href={productUrl} className="relative aspect-[3/4] bg-[#F5F5F5] overflow-hidden block">
+    <div className={cn("group flex flex-col", className)} {...rest}>
+      <Link href={productUrl} className="relative aspect-[3/4] bg-background-cream overflow-hidden block">
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-2 z-10">
+        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
           {discount && (
-            <Badge className="bg-primary text-white border-none rounded-none px-2 py-0.5 text-[10px] uppercase font-bold">
-              {discount} OFF
+            <Badge className="bg-primary text-white border-none rounded-none px-2 py-1 text-[10px] uppercase font-bold shadow-sm">
+              {discount} Off
             </Badge>
           )}
           {isNew && (
-            <Badge className="bg-black text-white border-none rounded-none px-2 py-0.5 text-[10px] uppercase font-bold">
+            <Badge className="bg-foreground text-white border-none rounded-none px-2 py-1 text-[10px] uppercase font-bold shadow-sm">
               New
             </Badge>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="absolute top-2 right-2 flex flex-col gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-10 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
           <button 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
             }}
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:text-primary transition-colors"
+            className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md text-foreground hover:text-primary transition-all duration-200 hover:scale-110"
+            aria-label="Add to wishlist"
           >
             <Heart className="w-4 h-4" />
           </button>
@@ -291,8 +296,8 @@ const ProductCard = (props: ProductCardProps) => {
             src={image}
             alt={name}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 768px) 50vw, 25vw"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={() => setLegacyImageError(true)}
           />
         ) : (
@@ -305,10 +310,10 @@ const ProductCard = (props: ProductCardProps) => {
 
         {/* Quick Add Button */}
         <div 
-          className="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+          className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"
           onClick={(e) => e.preventDefault()}
         >
-          <Button className="w-full bg-primary hover:bg-primary/90 text-white rounded-none py-6 text-[10px] tracking-[0.2em] uppercase font-bold">
+          <Button className="w-full rounded-none py-6 text-[11px] tracking-[0.15em] uppercase font-bold bg-primary hover:bg-primary-dark text-white">
             <ShoppingCart className="w-4 h-4 mr-2" />
             Quick Add
           </Button>
@@ -316,12 +321,14 @@ const ProductCard = (props: ProductCardProps) => {
       </Link>
 
       {/* Product Info */}
-      <Link href={productUrl} className="flex flex-col space-y-1 text-center lg:text-left">
-        <h3 className="text-xs font-bold tracking-widest uppercase text-foreground line-clamp-1">{name}</h3>
-        <div className="flex items-center justify-center lg:justify-start space-x-2">
-          <span className="text-sm font-bold text-primary">{price}</span>
+      <Link href={productUrl} className="flex flex-col space-y-1.5 pt-4">
+        <h3 className="text-xs font-semibold tracking-wide uppercase text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+          {name}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-primary">{price}</span>
           {originalPrice && (
-            <span className="text-xs text-muted-foreground line-through decoration-muted-foreground/50">
+            <span className="text-xs text-muted-foreground line-through">
               {originalPrice}
             </span>
           )}

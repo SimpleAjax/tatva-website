@@ -74,7 +74,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   // Calculate price
   const price = selectedVariant ? getVariantPrice(selectedVariant) : null;
-  const originalPrice = selectedVariant?.original_price || null;
+  const originalPrice = selectedVariant?.calculated_price?.original_amount || null;
   const discount = originalPrice && price && originalPrice > price
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : null;

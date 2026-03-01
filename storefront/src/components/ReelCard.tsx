@@ -135,10 +135,7 @@ const ReelCard = ({
                         src={thumbnailUrl}
                         alt={productName}
                         fill
-                        className={cn(
-                            "object-cover transition-opacity duration-500",
-                            videoState === 'playing' ? "opacity-0" : "opacity-100"
-                        )}
+                        className="object-cover opacity-100"
                         priority
                     />
                 </div>

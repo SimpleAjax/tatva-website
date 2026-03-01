@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Star, Quote } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Testimonial {
   id: string;
@@ -9,7 +10,6 @@ interface Testimonial {
   location: string;
   text: string;
   rating: number;
-  avatar?: string;
   product?: string;
 }
 
@@ -85,44 +85,45 @@ const duplicatedTestimonials = [...testimonials, ...testimonials];
 
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
-    <div className="flex-shrink-0 w-[400px] bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-rose-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <div className="flex-shrink-0 w-[360px] md:w-[400px] bg-white p-6 lg:p-8 shadow-sm border border-border hover:shadow-md transition-all duration-300 hover:-translate-y-1">
       {/* Quote Icon */}
-      <Quote className="w-8 h-8 text-rose-200 mb-4" />
+      <Quote className="w-6 h-6 text-primary/20 mb-4" />
       
       {/* Stars */}
-      <div className="flex gap-1 mb-3">
+      <div className="flex gap-1 mb-4">
         {[...Array(5)].map((_, idx) => (
           <Star
             key={idx}
-            className={`w-4 h-4 ${
+            className={cn(
+              "w-3.5 h-3.5",
               idx < testimonial.rating
                 ? "text-amber-400 fill-amber-400"
-                : "text-zinc-200"
-            }`}
+                : "text-muted-foreground/20"
+            )}
           />
         ))}
       </div>
       
       {/* Review Text */}
-      <p className="text-zinc-700 leading-relaxed mb-4 line-clamp-4">
+      <p className="text-sm text-foreground-muted leading-relaxed mb-4 line-clamp-4">
         &ldquo;{testimonial.text}&rdquo;
       </p>
       
       {/* Product Tag */}
       {testimonial.product && (
-        <span className="inline-block px-3 py-1 bg-rose-50 text-rose-600 text-xs font-medium rounded-full mb-4">
+        <span className="inline-block px-3 py-1 bg-rose text-primary text-[10px] font-semibold uppercase tracking-wider mb-6">
           {testimonial.product}
         </span>
       )}
       
       {/* Author */}
-      <div className="flex items-center gap-3 pt-4 border-t border-zinc-100">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white font-bold text-sm">
+      <div className="flex items-center gap-3 pt-4 border-t border-border">
+        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
           {testimonial.name.charAt(0)}
         </div>
         <div>
-          <p className="font-semibold text-zinc-900 text-sm">{testimonial.name}</p>
-          <p className="text-zinc-500 text-xs">{testimonial.location}</p>
+          <p className="font-semibold text-foreground text-sm">{testimonial.name}</p>
+          <p className="text-muted-foreground text-xs">{testimonial.location}</p>
         </div>
       </div>
     </div>
@@ -131,16 +132,17 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 
 export default function TestimonialsMarquee() {
   return (
-    <section className="py-10 bg-gradient-to-b from-rose-50/50 via-white to-rose-50/30 overflow-hidden">
-      <div className="container mx-auto px-4 mb-12">
-        <div className="text-center space-y-4">
-          <span className="text-primary text-[10px] lg:text-[11px] font-bold tracking-[0.4em] uppercase">
+    <section className="py-16 lg:py-24 bg-background-warm overflow-hidden">
+      {/* Section Header */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="text-center space-y-3">
+          <span className="text-primary text-[11px] font-semibold tracking-[0.2em] uppercase">
             Testimonials
           </span>
-          <h2 className="text-4xl lg:text-5xl font-serif text-primary italic">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary">
             What the Tribe Says
           </h2>
-          <p className="text-zinc-500 max-w-xl mx-auto">
+          <p className="text-muted-foreground max-w-xl mx-auto text-sm">
             Real stories from our beloved customers who became part of the TATVA family
           </p>
         </div>
@@ -149,10 +151,10 @@ export default function TestimonialsMarquee() {
       {/* First Row - Left to Right */}
       <div className="relative mb-6">
         {/* Gradient Overlays */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-rose-50/50 to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-rose-50/50 to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-background-warm to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-background-warm to-transparent z-10 pointer-events-none" />
         
-        <div className="flex gap-6 animate-marquee-left">
+        <div className="flex gap-6 animate-marquee hover:[animation-play-state:paused]">
           {duplicatedTestimonials.map((testimonial, idx) => (
             <TestimonialCard key={`left-${testimonial.id}-${idx}`} testimonial={testimonial} />
           ))}
@@ -162,10 +164,10 @@ export default function TestimonialsMarquee() {
       {/* Second Row - Right to Left */}
       <div className="relative">
         {/* Gradient Overlays */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-rose-50/50 to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-rose-50/50 to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-background-warm to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-background-warm to-transparent z-10 pointer-events-none" />
         
-        <div className="flex gap-6 animate-marquee-right">
+        <div className="flex gap-6 animate-marquee-reverse hover:[animation-play-state:paused]">
           {[...duplicatedTestimonials].reverse().map((testimonial, idx) => (
             <TestimonialCard key={`right-${testimonial.id}-${idx}`} testimonial={testimonial} />
           ))}
@@ -173,51 +175,18 @@ export default function TestimonialsMarquee() {
       </div>
 
       {/* Trust Badges */}
-      <div className="container mx-auto px-4 mt-8">
-        <div className="flex flex-wrap justify-center items-center gap-8 text-zinc-400">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="flex flex-wrap justify-center items-center gap-6 md:gap-8 text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+            <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
             <span className="text-sm font-medium">4.9/5 Rating</span>
           </div>
-          <div className="w-px h-4 bg-zinc-300 hidden sm:block" />
+          <div className="w-px h-4 bg-border hidden sm:block" />
           <div className="text-sm font-medium">10,000+ Happy Customers</div>
-          <div className="w-px h-4 bg-zinc-300 hidden sm:block" />
+          <div className="w-px h-4 bg-border hidden sm:block" />
           <div className="text-sm font-medium">Pan India Delivery</div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes marquee-left {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-        
-        @keyframes marquee-right {
-          0% {
-            transform: translateX(-50%);
-          }
-          100% {
-            transform: translateX(0);
-          }
-        }
-        
-        .animate-marquee-left {
-          animation: marquee-left 40s linear infinite;
-        }
-        
-        .animate-marquee-right {
-          animation: marquee-right 40s linear infinite;
-        }
-        
-        .animate-marquee-left:hover,
-        .animate-marquee-right:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
     </section>
   );
 }

@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import ReelCard from "./ReelCard";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp } from "lucide-react";
 import { getVideoUrl } from "@/lib/imagekit";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface ReelData {
   productName: string;
@@ -64,57 +66,67 @@ export default function BestSellersReels({ reels }: BestSellersReelsProps) {
   }, [reels]);
 
   return (
-    <section className="py-8 lg:py-10 bg-zinc-50 overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <span className="text-primary text-[10px] lg:text-[11px] font-bold tracking-[0.4em] uppercase">
-            Trending Now
-          </span>
-          <h2 className="text-4xl font-serif text-primary italic mt-2">Best Sellers</h2>
-          <div className="w-24 h-0.5 bg-primary/20 mx-auto mt-4" />
+    <section className="py-16 lg:py-20 bg-white overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center mb-10 lg:mb-12">
+          <div className="flex items-center justify-center gap-2 text-primary mb-3">
+            <TrendingUp className="w-4 h-4" />
+            <span className="text-[11px] font-semibold tracking-[0.2em] uppercase">
+              Trending Now
+            </span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-serif italic text-primary">
+            Best Sellers
+          </h2>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex justify-center items-center py-12">
+          <div className="flex justify-center items-center py-16">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <span className="ml-3 text-muted-foreground">Loading videos...</span>
+            <span className="ml-3 text-muted-foreground text-sm">Loading videos...</span>
           </div>
         )}
 
-        {/* Reels Horizontal Scroll - Smaller size, ~7 visible */}
+        {/* Reels Horizontal Scroll */}
         <div className={cn(
-          "flex overflow-x-auto gap-3 pb-4 no-scrollbar snap-x snap-mandatory",
+          "relative",
           isLoading ? "opacity-0" : "opacity-100 transition-opacity duration-500"
         )}>
-          {reels.map((reel, i) => (
-            <div 
-              key={i} 
-              className="flex-shrink-0 w-[140px] sm:w-[160px] lg:w-[180px] snap-start"
-            >
-              <ReelCard 
-                {...reel} 
-                compact // Pass compact prop for smaller styling
-                priority={i < 2} // Priority load first 2 videos
-              />
-            </div>
-          ))}
+          <div 
+            className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 snap-x snap-mandatory no-scrollbar"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {reels.map((reel, i) => (
+              <div 
+                key={i} 
+                className="flex-shrink-0 w-[140px] sm:w-[160px] lg:w-[180px] snap-start"
+              >
+                <ReelCard 
+                  {...reel} 
+                  compact
+                  priority={i < 2}
+                />
+              </div>
+            ))}
+          </div>
+          
+          {/* Fade Edges */}
+          <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
         </div>
 
-        <div className="mt-16 text-center">
-          <a 
+        {/* CTA */}
+        <div className="mt-12 text-center">
+          <Link 
             href="/category/best-sellers" 
-            className="bg-primary hover:bg-primary/90 text-white transition-all px-12 py-4 tracking-widest uppercase font-bold text-xs shadow-lg rounded-full inline-block"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-10 py-4 text-xs font-bold uppercase tracking-widest transition-all hover:shadow-lg hover:-translate-y-0.5"
           >
             Explore Best Sellers
-          </a>
+          </Link>
         </div>
       </div>
     </section>
   );
-}
-
-// Helper for className
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
 }
